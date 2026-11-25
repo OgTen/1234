@@ -6,7 +6,7 @@ local Window = GlassyUI:CreateWindow({
     Title = "Matcha Script",
     Subtitle = "Glassy interface",
     Size = Vector2.new(760, 540),
-    Theme = "Lavender Glass",
+    Theme = "Blue",
     MenuKey = "p",
     Opacity = 100,
     Background = "none",
@@ -43,22 +43,9 @@ MainSection:AddDropdown({
     end,
 })
 MainSection:AddButton({
-    Title = "Test notification",
-    ButtonText = "Notify",
-    Callback = function()
-        Window:Notify({ Title = "GlassyUI", Content = "Everything is working.", Duration = 3 })
-    end,
+    Title = "Test button",
+    ButtonText = "Run",
+    Callback = function() print("Button pressed") end,
 })
 
-local Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
-local Appearance = Settings:AddSection("Appearance", "Change the interface theme.")
-Appearance:AddDropdown({
-    Title = "Theme",
-    Options = { "Lavender Glass", "Cloud Glass", "Rose Glass", "Mint Glass", "Midnight", "Obsidian" },
-    Default = "Lavender Glass",
-    Callback = function(value)
-        Window:SetTheme(value)
-    end,
-})
-
-Window:Notify({ Title = "GlassyUI loaded", Content = "Press P to toggle the interface." })
+-- The library includes its own Settings tab and accent theme selector.
