@@ -99,11 +99,11 @@ local Layout = {
 
     RowHeight       = 32,
     RowColumnGap    = 8,
-    RowGapY         = 10,
+    RowGapY         = 14,
 
-    ToggleW         = 42,
-    ToggleH         = 22,
-    ToggleKnob      = 16,
+    ToggleW         = 46,
+    ToggleH         = 24,
+    ToggleKnob      = 18,
 
     SliderH         = 6,
     SliderKnob      = 6,
@@ -119,7 +119,7 @@ local Layout = {
     TinySize        = 13,
 
     ScrollSpeed     = 30,
-    ScrollbarW      = 4,
+    ScrollbarW      = 3,
 
     AnimFast        = 18,
     AnimMed         = 12,
@@ -1537,6 +1537,7 @@ function Tab.new(parent, opts)
     local self = setmetatable({
         Parent   = parent,
         Name     = opts.Title or "Tab",
+        Subtitle = opts.Subtitle or opts.Description or "",
         Icon     = opts.Icon,
         Hidden   = opts.Hidden or false,
         IsSettings = opts.IsSettings or false,
@@ -1576,10 +1577,11 @@ function Section.new(tab, title, description, opts)
         Parent      = tab,
         Title       = title or "Section",
         Description = description or "",
+        Icon = opts.Icon,
         Collapsed   = opts.Collapsed and true or false,
         Column      = (function()
             local c = string.lower(tostring(opts.Column or opts.column or "auto"))
-            return (c == "left" or c == "right") and c or "auto"
+            return (c == "left" or c == "right" or c == "full") and c or "auto"
         end)(),
         Rows        = {},
         HeaderH     = Layout.SectionH,
@@ -2068,7 +2070,7 @@ local function HeaderText(value, x, y, room, size, font, color, z, alpha, spacin
 end
 
 local function ContentHeaderHeight(tab)
-    local width = Geometry.ContentW - Layout.ContentPadX * 2
+    local width = math.max(40, Geometry.ContentW - Layout.ContentPadX * 2 - 88)
     local titleLines = #WrapHeaderLines(tab.Name, width, 21, Fonts.SystemBold)
     local subtitleLines = (tab.Subtitle and tab.Subtitle ~= "") and #WrapHeaderLines(tab.Subtitle, width, 14, Fonts.System) or 0
     return math.max(60, 21 + titleLines * 25 + (subtitleLines > 0 and (subtitleLines * 18 + 10) or 0))
@@ -2088,6 +2090,7 @@ local function TickRailOpen(dt)
     State.RailPinned = true
 end
 
+local WantTooltip
 local function DrawTabRail()
     local th = State.Theme
     local rx, ry, rw, rh = Geometry.RailX, Geometry.RailY, Geometry.RailW, Geometry.RailH
@@ -2451,7 +2454,7 @@ Register("Toggle", function(parent, opts)
         TickAnim(self, hover, hover and Input.Down, State.Delta)
 
         local target = self.Value and 1 or 0
-        self._knob = Approach(self._knob, target, 22, State.Delta)
+        self._knob = State.NoAnim and target or Approach(self._knob, target, 22, State.Delta)
         if math.abs(self._knob - target) < 0.01 then self._knob = target end
 
         if checkbox then
@@ -2865,8 +2868,6 @@ Register("Status", function(parent, opts)
     return self
 end)
 
-local WantTooltip
-
 local function LayoutInline(row, x, y, w)
 
     local n = #row.Cells
@@ -3058,13 +3059,16 @@ local function DrawSection(section, x, y, w)
     local clippedH = math.max(0, clippedBottom - clippedTop)
     if clippedH <= 0 then return end
 
-    local radius = math.min(16, clippedH/2)
-    Rect(x,clippedTop,w,clippedH,State.Theme.PanelHi,40,radius,0.88)
+    local radius = math.min(14, clippedH/2)
+    Rect(x,clippedTop,w,clippedH,State.Theme.PanelHi,40,radius,1)
     Stroke(x,clippedTop,w,clippedH,State.Theme.Divider,41,radius,0.8)
 
     local headerVisible = (y + headerH > viewportTop and y < viewportBottom)
     if headerVisible then
         local titleX = x + Layout.SectionPadX
+        if section.Icon then
+            if DrawIconByName(section.Icon,titleX,y+8,18,State.Theme.Accent,50,1) then titleX = titleX + 26 end
+        end
         local chevronCX = x + w - Layout.SectionPadX - 7
         local chevronCY = y + math.floor(headerH * 0.43)
 
@@ -4529,6 +4533,10 @@ local function BuildContentLayout(tab, viewportTop, halfW)
     local leftY = viewportTop
     local rightY = viewportTop
     local sectionIndex = 0
+    local sectionCount = 0
+    for _, row in ipairs(tab.Rows or {}) do
+        if not row.Hidden and IsSection(row) then sectionCount = sectionCount + 1 end
+    end
     local revealIndex = 0
     local i = 1
 
@@ -4540,7 +4548,9 @@ local function BuildContentLayout(tab, viewportTop, halfW)
             sectionIndex = sectionIndex + 1
             revealIndex = revealIndex + 1
 
-            local h = MeasureSection(row, halfW)
+            local full = row.Column == "full" or (sectionCount == 1 and row.Column == "auto") or (halfW < 260 and row.Column == "auto")
+            local width = full and Geometry.InnerW or halfW
+            local h = MeasureSection(row, width)
             local useLeft
             if row.Column == "left" then
                 useLeft = true
@@ -4549,25 +4559,28 @@ local function BuildContentLayout(tab, viewportTop, halfW)
             else
                 useLeft = (sectionIndex % 2) == 1
             end
-            local x = useLeft and Geometry.InnerX or (Geometry.InnerX + halfW + Layout.SectionColumnGap)
-            local y = useLeft and leftY or rightY
+            local x = (full or useLeft) and Geometry.InnerX or (Geometry.InnerX + halfW + Layout.SectionColumnGap)
+            local y = full and math.max(leftY, rightY) or (useLeft and leftY or rightY)
 
             row._layoutX = x
             row._layoutY = y
-            row._layoutW = halfW
+            row._layoutW = width
             row._layoutH = h
 
             items[#items + 1] = {
                 row = row,
                 x = x,
                 y = y,
-                w = halfW,
+                w = width,
                 h = h,
                 reveal = revealIndex,
                 kind = "section",
             }
 
-            if useLeft then
+            if full then
+                leftY = y + h + Layout.SectionGap
+                rightY = leftY
+            elseif useLeft then
                 leftY = y + h + Layout.SectionGap
             else
                 rightY = y + h + Layout.SectionGap
@@ -4610,7 +4623,7 @@ local function BuildContentLayout(tab, viewportTop, halfW)
     return items, math.max(leftY, rightY) - viewportTop
 end
 
-local TabPageTransition = { Index = 1, Time = 0.38, Duration = 0.38 }
+local TabPageTransition = { Index = 1, Time = 0.20, Duration = 0.20 }
 
 local function PageReveal(progress)
     progress = Clamp(progress, 0, 1)
@@ -4626,23 +4639,32 @@ local function DrawContent()
         TabPageTransition.Time = 0
     end
     TabPageTransition.Time = math.min(TabPageTransition.Duration, TabPageTransition.Time + State.Delta)
-    local pageProgress = TabPageTransition.Time / TabPageTransition.Duration
+    local pageProgress = State.NoAnim and 1 or TabPageTransition.Time / TabPageTransition.Duration
     local pageBaseAlpha = FrameAlpha
     FrameAlpha = pageBaseAlpha * (0.22 + 0.78 * PageReveal(pageProgress))
 
     FrameAlpha = pageBaseAlpha
     local titleY = Geometry.ContentY + 17
     local headerH = ContentHeaderHeight(tab)
-    if Input.Click and not State.Drag and not State.Resize and MouseIn(Geometry.ContentX + Layout.ContentPadX, Geometry.ContentY + 4, Geometry.ContentW - Layout.ContentPadX * 2, headerH - 6) then
+    if Input.Click and not State.Drag and not State.Resize and MouseIn(Geometry.ContentX + Layout.ContentPadX, Geometry.ContentY + 4, Geometry.ContentW - Layout.ContentPadX * 2 - 38, headerH - 6) then
         BeginDrag()
         Input.Click = false
     end
-    local headerWidth = math.max(40, Geometry.ContentW - Layout.ContentPadX * 2)
+    local headerWidth = math.max(40, Geometry.ContentW - Layout.ContentPadX * 2 - 88)
+    local hx = Geometry.ContentX + Layout.ContentPadX
+    Rect(hx, titleY, 34, 34, mix(State.Theme.PanelHi, State.Theme.Accent, 0.18), 60, 9, 1)
+    DrawIconByName(tab.Icon or "home", hx+7, titleY+7, 20, State.Theme.Accent, 61, 1)
+    local closeX = Geometry.ContentX + Geometry.ContentW - Layout.ContentPadX - 30
+    local closeHover = MouseIn(closeX,titleY,30,30)
+    Rect(closeX,titleY,30,30,closeHover and mix(State.Theme.PanelHi,State.Theme.Danger,0.25) or State.Theme.PanelHi,60,8,1)
+    Line(closeX+10,titleY+10,closeX+20,titleY+20,State.Theme.Text,61,1.5,1)
+    Line(closeX+20,titleY+10,closeX+10,titleY+20,State.Theme.Text,61,1.5,1)
+    if closeHover and Input.Click then State.Open = false; Input.Click = false end
     local titleLines = #WrapHeaderLines(tab.Name, headerWidth, 21, Fonts.SystemBold)
-    HeaderText(tab.Name, Geometry.ContentX + Layout.ContentPadX, titleY,
+    HeaderText(tab.Name, hx + 44, titleY,
                headerWidth, 21, Fonts.SystemBold, State.Theme.Text, 60, 1, 4)
     if tab.Subtitle and tab.Subtitle ~= "" then
-        HeaderText(tab.Subtitle, Geometry.ContentX + Layout.ContentPadX, titleY + titleLines * 25 + 4,
+        HeaderText(tab.Subtitle, hx + 44, titleY + titleLines * 25 + 4,
                    headerWidth, 14, Fonts.System, State.Theme.TextDim, 60, 1, 4)
     end
 
@@ -4677,7 +4699,7 @@ local function DrawContent()
     ActiveClipTop = clipTop
     ActiveClipBottom = clipBottom
     for itemIndex, item in ipairs(items) do
-        local revealProgress = Clamp((pageProgress - (itemIndex - 1) * 0.020) / 0.72, 0, 1)
+        local revealProgress = pageProgress >= 1 and 1 or Clamp((pageProgress - (itemIndex - 1) * 0.020) / 0.72, 0, 1)
         FrameAlpha = pageBaseAlpha * PageReveal(revealProgress)
         local row = item.row
         local y = item.y - tab.Scroll
@@ -4825,7 +4847,7 @@ local ThemeTween = {
     From = nil,
     To = nil,
     T = 0,
-    Duration = 0.35,
+    Duration = 0.25,
 }
 
 local function IsColor3(value)
@@ -4949,11 +4971,11 @@ local function DrawTooltip()
     local a = Tooltip.Fade
 
     local text = Tooltip.Current
-    local textW = TextWidth(text, 12, Fonts.System)
+    local textW = TextWidth(text, 14, Fonts.System)
     local padX = 10
     local padY = 6
     local boxW = textW + padX * 2
-    local boxH = 12 + padY * 2 + 4
+    local boxH = 14 + padY * 2 + 4
 
     local vp = Camera.ViewportSize
     local tx = Tooltip.X + 14
@@ -4971,7 +4993,7 @@ local function DrawTooltip()
     Stroke(tx, ty, boxW, boxH, th.Stroke, 302, 6, 0.6 * a)
 
     Text(text, tx + padX, ty + padY + 1,
-         th.Text, 12, Fonts.System, 303, a)
+         th.Text, 14, Fonts.System, 303, a)
 end
 
 local function ClearTooltip()
@@ -5207,12 +5229,34 @@ local function EnsureGlobalSettingsTab(library)
     })
 
     local appearance = Section.new(tab, "Appearance", "Global interface appearance", {})
-    Controls.Dropdown(appearance, {
-        Title = "Theme",
-        Options = {"Blue", "Red", "Pink", "Purple", "Green", "Cyan", "Orange", "Yellow", "White"},
-        Default = (State.Theme and State.Theme.Name) or "Blue",
-        Callback = function(value) SetThemeByName(value) end,
-    })
+    local swatches = Base.New("ThemeSwatches", appearance, {})
+    swatches.Height = 132
+    function swatches:Draw(x,y,w)
+        local cell = (w-16)/3
+        for i, theme in ipairs(Themes) do
+            local cx = x + ((i-1)%3)*(cell+8)
+            local cy = y + math.floor((i-1)/3)*44
+            local selected = State.ThemeIndex == i
+            local hover = MouseIn(cx,cy,cell,38)
+            Rect(cx,cy,cell,38,hover and State.Theme.Track or State.Theme.Panel,52,8,1)
+            Stroke(cx,cy,cell,38,selected and theme.Accent or State.Theme.Stroke,53,8,1)
+            Circle(cx+13,cy+19,6,theme.Accent,54,true,1,18,1)
+            Text(theme.Name,cx+24,cy+10,State.Theme.Text,Layout.TinySize,Fonts.System,54,1,math.max(1,cell-29))
+        end
+    end
+    function swatches:Input(x,y,w)
+        local cell = (w-16)/3
+        for i, theme in ipairs(Themes) do
+            local cx = x + ((i-1)%3)*(cell+8)
+            local cy = y + math.floor((i-1)/3)*44
+            if Input.Click and MouseIn(cx,cy,cell,38) then
+                SetThemeByName(theme.Name)
+                if writefile then pcall(writefile,"GlassyUI_accent.txt",theme.Name) end
+                Input.Click = false
+                return
+            end
+        end
+    end
     Controls.Toggle(appearance, {
         Title = "Reduce animations",
         Description = "Disables most UI tweening and motion.",
@@ -5522,6 +5566,14 @@ function Library:CreateWindow(opts)
         end
     end
 
+    if opts.RememberTheme ~= false and readfile then
+        local ok, saved = pcall(readfile,"GlassyUI_accent.txt")
+        if ok then
+            for i, theme in ipairs(Themes) do
+                if theme.Name == saved then State.Theme = theme; State.ThemeIndex = i; break end
+            end
+        end
+    end
     EnsureGlobalSettingsTab(self)
 
     local vp = Camera.ViewportSize
@@ -5948,7 +6000,7 @@ else
     end)
 end
 
-Library.Version = "2.3.0"
+Library.Version = "2.4.0"
 
 GlassyUI = Library
 
