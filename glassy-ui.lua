@@ -29,7 +29,7 @@ local function AddAccentTheme(name, r, g, b)
     local base, panel, hi = rgb(18,19,23), rgb(24,25,30), rgb(34,35,41)
     Themes[#Themes+1] = { Name=name, Base=base, Panel=panel, PanelHi=hi,
         Stroke=mix(rgb(48,49,57),accent,0.25), Divider=mix(rgb(39,40,47),accent,0.25),
-        Text=rgb(242,243,247), TextDim=rgb(186,189,200), TextMuted=rgb(128,132,146),
+        Text=rgb(242,243,247), TextDim=rgb(205,208,218), TextMuted=rgb(159,164,178),
         Accent=accent, AccentA=accent, AccentB=accent, AccentDim=mix(hi,accent,0.55),
         Track=rgb(43,44,51), TrackFill=accent, Danger=rgb(245,87,100),
         Warning=rgb(235,198,76), Success=rgb(65,210,139) }
@@ -90,8 +90,8 @@ local Layout = {
     SectionPadY     = 15,
     SectionBottomPad = 6,
     SectionCorner   = 12,
-    SectionTitleH   = 18,
-    SectionDescH    = 16,
+    SectionTitleH   = 21,
+    SectionDescH    = 19,
 
     ContentPadX     = 28,
     ContentPadY     = 16,
@@ -99,7 +99,7 @@ local Layout = {
 
     RowHeight       = 32,
     RowColumnGap    = 8,
-    RowGapY         = 7,
+    RowGapY         = 10,
 
     ToggleW         = 42,
     ToggleH         = 22,
@@ -113,10 +113,10 @@ local Layout = {
     DropdownH       = 30,
     DividerH        = 1,
 
-    TitleSize       = 14,
-    TextSize        = 13,
-    SmallSize       = 12,
-    TinySize        = 11,
+    TitleSize       = 16,
+    TextSize        = 15,
+    SmallSize       = 14,
+    TinySize        = 13,
 
     ScrollSpeed     = 30,
     ScrollbarW      = 4,
@@ -2283,17 +2283,17 @@ Register("Label", function(parent, opts)
         local titleY = TextMidY(y, 18, Layout.TextSize)
         Text(self.Title, x, titleY,
              th.Text, Layout.TextSize, Fonts.System,
-             50, self.Enabled and 0.92 or 0.4, w)
+             50, self.Enabled and 1 or 0.4, w)
 
         if self.Description ~= "" then
-            local descY = y + 16
+            local descY = y + 20
             Text(self.Description, x, descY,
                  th.TextDim, Layout.SmallSize, Fonts.System,
-                 51, self.Enabled and 0.7 or 0.3,
+                 51, self.Enabled and 0.95 or 0.3,
                  w)
-            self.Height = 32
+            self.Height = 38
         else
-            self.Height = 18
+            self.Height = 20
         end
     end
 
@@ -2421,7 +2421,7 @@ Register("Toggle", function(parent, opts)
     local self = Base.New("Toggle", parent, opts)
     self.Value   = opts.Default and true or false
     self.Callback = opts.Callback
-    self.Height  = Layout.ToggleH
+    self.Height  = Layout.ToggleH + (self.Description ~= "" and 20 or 0)
 
     self._knob = self.Value and 1 or 0
 
@@ -2445,7 +2445,7 @@ Register("Toggle", function(parent, opts)
         local knob   = Layout.ToggleKnob
 
         local trackX = x + w - trackW
-        local trackY = y + (self.Height - trackH) / 2
+        local trackY = y + (Layout.ToggleH - trackH) / 2
 
         local hover = MouseIn(trackX, trackY, trackW, trackH) and self.Enabled
         TickAnim(self, hover, hover and Input.Down, State.Delta)
@@ -2482,20 +2482,20 @@ Register("Toggle", function(parent, opts)
         end
 
         if self.Title ~= "" then
-            local titleY = TextMidY(y, self.Height, Layout.TextSize)
+            local titleY = TextMidY(y, Layout.ToggleH, Layout.TextSize)
             Text(self.Title, x, titleY,
                  th.Text, Layout.TextSize, Fonts.System,
-                 51, self.Enabled and 0.92 or 0.4,
+                 51, self.Enabled and 1 or 0.4,
                  trackX - x - 10)
         end
 
         if self.Description ~= "" then
-            local descY = y + self.Height - 4
+            local descY = y + Layout.ToggleH + 3
             Text(self.Description, x, descY,
                  th.TextDim, Layout.SmallSize, Fonts.System,
-                 51, self.Enabled and 0.6 or 0.25,
+                 51, self.Enabled and 0.95 or 0.25,
                  trackX - x - 10)
-            self.Height = math.max(self.Height, Layout.ToggleH + 12)
+            self.Height = Layout.ToggleH + 20
         end
     end
 
@@ -2505,7 +2505,7 @@ Register("Toggle", function(parent, opts)
         local trackW = checkbox and 18 or Layout.ToggleW
         local trackH = checkbox and 18 or Layout.ToggleH
         local trackX = x + w - trackW
-        local trackY = y + (self.Height - trackH) / 2
+        local trackY = y + (Layout.ToggleH - trackH) / 2
 
         if MouseIn(trackX, trackY, trackW, trackH) and Input.Click then
             Input.Click = false
@@ -2545,7 +2545,7 @@ Register("Radio", function(parent, opts)
         local top = y
         if self.Title ~= "" then
             Text(self.Title, x, y + 2, th.Text, Layout.TextSize,
-                 Fonts.System, 51, self.Enabled and 0.92 or 0.4, w)
+                 Fonts.System, 51, self.Enabled and 1 or 0.4, w)
             top = y + 23
         end
 
@@ -2632,7 +2632,7 @@ Register("Slider", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, y + 1,
                  th.Text, Layout.TextSize, Fonts.System,
-                 51, self.Enabled and 0.92 or 0.4,
+                 51, self.Enabled and 1 or 0.4,
                  w - badgeW - 12)
         end
 
@@ -2736,7 +2736,7 @@ Register("Segmented", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, TextMidY(y + 3, h, Layout.TextSize),
                  th.Text, Layout.TextSize, Fonts.System, 51,
-                 self.Enabled and 0.92 or 0.4,
+                 self.Enabled and 1 or 0.4,
                  math.max(1, startX - x - 10))
         end
 
@@ -2805,7 +2805,7 @@ Register("Progress", function(parent, opts)
         local th = State.Theme
         local valueText = tostring(math.floor(self.Value * 100 + 0.5) / 100) .. self.Suffix
         Text(self.Title, x, y, th.Text, Layout.TextSize, Fonts.System, 51,
-             self.Enabled and 0.92 or 0.4, math.max(1, w - 70))
+             self.Enabled and 1 or 0.4, math.max(1, w - 70))
         local vw = TextWidth(valueText, Layout.SmallSize, Fonts.SystemBold)
         Text(valueText, x + w - vw, y + 1, th.Accent, Layout.SmallSize,
              Fonts.SystemBold, 52, self.Enabled and 0.95 or 0.4)
@@ -2850,7 +2850,7 @@ Register("Status", function(parent, opts)
 
         Text(self.Title, x, TextMidY(y, 24, Layout.TextSize),
              th.Text, Layout.TextSize, Fonts.System, 51,
-             self.Enabled and 0.92 or 0.4, math.max(1, w - 100))
+             self.Enabled and 1 or 0.4, math.max(1, w - 100))
 
         local badgeW = math.max(54, TextWidth(self.Value, Layout.SmallSize, Fonts.SystemBold) + 18)
         local bx = x + w - badgeW
@@ -3078,7 +3078,7 @@ local function DrawSection(section, x, y, w)
             Text(section.Description,
                  titleX, y + 7 + Layout.SectionTitleH,
                  State.Theme.TextDim, Layout.SmallSize,
-                 Fonts.System, 50, 0.72,
+                 Fonts.System, 50, 0.95,
                  math.max(1, chevronCX - titleX - 16))
         end
 
@@ -3401,7 +3401,7 @@ Register("RangeSlider", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, y + 1,
                  th.Text, Layout.TextSize, Fonts.System,
-                 51, self.Enabled and 0.92 or 0.4,
+                 51, self.Enabled and 1 or 0.4,
                  w - badgeW - 12)
         end
 
@@ -3678,7 +3678,7 @@ Register("Dropdown", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, fieldY + (h - Layout.TextSize) / 2,
                  th.Text, Layout.TextSize, Fonts.System,
-                 54, self.Enabled and 0.92 or 0.4,
+                 54, self.Enabled and 1 or 0.4,
                  fg.LabelRoom)
         end
 
@@ -3868,7 +3868,7 @@ Register("Keybind", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, TextMidY(y, self.Height, Layout.TextSize),
                  th.Text, Layout.TextSize, Fonts.System,
-                 51, self.Enabled and 0.92 or 0.4,
+                 51, self.Enabled and 1 or 0.4,
                  w - 80)
             titleW = TextWidth(self.Title, Layout.TextSize, Fonts.System)
         end
@@ -4169,7 +4169,7 @@ Register("ColorPicker", function(parent, opts)
         if self.Title ~= "" then
             Text(self.Title, x, TextMidY(y, self.Height, Layout.TextSize),
                  th.Text, Layout.TextSize, Fonts.System,
-                 51, self.Enabled and 0.92 or 0.4,
+                 51, self.Enabled and 1 or 0.4,
                  w - 44)
         end
 
@@ -5483,6 +5483,7 @@ function Library:CreateWindow(opts)
 
     local logoSource = opts.Logo
     if logoSource == nil then logoSource = opts.logo end
+    if logoSource == nil then logoSource = "https://i.ibb.co/dwpNVBN2/Shinobu-Shocked.png" end
     if logoSource == nil or logoSource == false or logoSource == "" or State.ShowLogo == false then
         HidePicture(State.Logo)
         State.Logo = nil
@@ -5947,7 +5948,7 @@ else
     end)
 end
 
-Library.Version = "2.2.0"
+Library.Version = "2.3.0"
 
 GlassyUI = Library
 
