@@ -208,13 +208,13 @@ local Layout = {
     WindowMinH      = 390,
     Corner          = 24,
     TopbarH         = 0,
-    TabRailW        = 205,
+    TabRailW        = 66,
     TabRailMinW     = 94,
-    TabRailNarrow   = 94,
+    TabRailNarrow   = 66,
 
     TabRowH         = 40,
     TabGap          = 6,
-    TabIcon         = 20,
+    TabIcon         = 24,
     SectionH        = 22,
     SectionGap      = 15,
     SectionColumnGap = 12,
@@ -436,7 +436,7 @@ end
 
 local FrameAlpha = 1
 
-local GlassSurfaceAlpha = 0.85
+local GlassSurfaceAlpha = 1
 
 local function GlassSurface(x, y, w, h, color, z, corner)
     if w <= 0 or h <= 0 then DrawOrder = DrawOrder + 1; return end
@@ -488,7 +488,7 @@ local function SolidSurface(x, y, w, h, color, z, corner)
     if l.Alpha ~= a then l.Alpha = a; o.Transparency = a end
 end
 
-local FrostedSurfaceAlpha = 0.68
+local FrostedSurfaceAlpha = 1
 
 local function FrostedSurface(x, y, w, h, color, z, corner)
     if w <= 0 or h <= 0 then DrawOrder = DrawOrder + 1; return end
@@ -1513,9 +1513,9 @@ local State = {
     Settings = {
         KeybindOverlay = true,
         PerformanceOverlay = true,
-        BackgroundEffects = true,
+        BackgroundEffects = false,
         BorderComet = false,
-        WindowOpacity = 88,
+        WindowOpacity = 100,
         CompactOverlay = false,
         ToggleStyle = "Switch",
         ConfigName = "default",
@@ -1650,7 +1650,7 @@ function Geometry.Recalculate()
     Geometry.FooterH = 0
     Geometry.RailH = State.H
 
-    local wide = math.max(Layout.TabRailW, math.floor(State.W * 0.22))
+    local wide = Layout.TabRailW
     Geometry.RailW = wide
 
     Geometry.ContentX = Geometry.RailX + Geometry.RailW
@@ -1905,15 +1905,7 @@ local function GetRequiredWindowHeight()
     for _, tab in ipairs(State.Tabs) do
         if not tab.Hidden and not tab.IsSettings then count = count + 1 end
     end
-    local railW = math.max(Layout.TabRailW, math.floor(State.W * 0.22))
-    local brandWidth = math.max(40, railW - 20) - 20
-    local titleLines = #WrapHeaderLines(State.WindowTitle or "GlassyUI", brandWidth, 18, Fonts.SystemBold)
-    local subtitleLines = State.WindowSubtitle ~= "" and #WrapHeaderLines(State.WindowSubtitle, brandWidth, 12, Fonts.System) or 0
-    local brandH = math.max(57, 18 + titleLines * 24 + (subtitleLines > 0 and (subtitleLines * 16 + 8) or 0) + 8)
-    local tabH = Layout.TabRowH * 0.96
-    local tabsHeight = count > 0 and (count * tabH + (count - 1) * Layout.TabGap) or 0
-
-    local needed = 8 + brandH + 22 + tabsHeight + 12 + Layout.TabRowH + 31
+    local needed = 86 + count * (Layout.TabRowH + Layout.TabGap) + Layout.TabRowH + 24
 
     local viewportH = Camera and Camera.ViewportSize and Camera.ViewportSize.Y or 900
     return math.min(math.max(Layout.WindowMinH, math.ceil(needed)), math.max(340, viewportH - 36))
@@ -2176,15 +2168,9 @@ end
 local function DrawFrame(hideBackgroundImage)
     local th = State.Theme
     local x,y,w,h = State.X,State.Y,State.W,State.H
-    Rect(x+2,y+5,w,h,rgb(20,20,40),9,Layout.Corner,0.18)
-    Rect(x,y,w,h,th.Base,10,Layout.Corner,GlassSurfaceAlpha)
-    if State.BackgroundImage and not hideBackgroundImage then
-        DrawPicture(State.BackgroundImage,x+2,y+2,w-4,h-4,Layer(11),GlassSurfaceAlpha*FrameAlpha,Layout.Corner-2)
-    end
-    DrawBackgroundEffect()
-    Rect(Geometry.ContentX+5,y+10,Geometry.ContentW-15,h-20,th.Panel,15,18,0.78)
-    Stroke(Geometry.ContentX+5,y+10,Geometry.ContentW-15,h-20,th.Stroke,16,18,0.8)
-    DrawGlassBorder(th)
+    Rect(x,y,w,h,th.Panel,10,Layout.Corner,1)
+    Stroke(x,y,w,h,th.Stroke,20,Layout.Corner,1)
+    Line(Geometry.ContentX,y+1,Geometry.ContentX,y+h-1,th.Stroke,36,1,1)
 end
 
 WrapHeaderLines = function(value, room, size, font)
@@ -2239,189 +2225,48 @@ end
 
 local function DrawTabRail()
     local th = State.Theme
-    local openAmt = 1
-
-    local railX = Geometry.RailX or State.X
-    local railY = Geometry.RailY or State.Y
-    local railW = Geometry.RailW or Layout.TabRailNarrow
-    local railH = Geometry.RailH or State.H
-
-    local sectionPadX = 10
-    local sectionX = railX + sectionPadX
-    local sectionY = railY + 8
-    local sectionW = math.max(40, railW - sectionPadX * 2)
-    local sectionH = math.max(44, railH - 16)
-
-    local sx, sy, sw, sh = railX + 10, railY + 10, railW - 15, railH - 20
-    Rect(sx,sy,sw,sh,th.Panel,36,18,0.85)
-    Stroke(sx,sy,sw,sh,th.Stroke,37,18,0.9)
-
-    local brandWidth = sectionW - 20
-    local logoSize = math.max(24, math.min(34, State.LogoSize or 28))
-    local logoX = math.floor(sectionX + sectionW - 11 - logoSize + 0.5)
-    local logoY = math.floor(sectionY + 12 + 0.5)
-    local titleX = sectionX + 11
-    local hasLogo = State.ShowLogo and State.Logo and State.Logo.Image
-    local titleWidth = hasLogo and math.max(32, logoX - titleX - 6) or brandWidth
-    local titleLines = #WrapHeaderLines(State.WindowTitle or "GlassyUI", titleWidth, 18, Fonts.SystemBold)
-    local subtitleLines = State.WindowSubtitle ~= "" and #WrapHeaderLines(State.WindowSubtitle, brandWidth, 12, Fonts.System) or 0
-    local brandH = math.max(57, 18 + titleLines * 24 + (subtitleLines > 0 and (subtitleLines * 16 + 8) or 0) + 8)
-    if Input.Click and MouseIn(railX + 20, railY + 5, railW - 30, brandH + 8) and not State.Drag then
+    local rx, ry, rw, rh = Geometry.RailX, Geometry.RailY, Geometry.RailW, Geometry.RailH
+    local size = 36
+    local lx, ly = rx + (rw-size)/2, ry + 15
+    if State.ShowLogo and State.Logo and State.Logo.Image then
+        DrawPicture(State.Logo,lx,ly,size,size,Layer(44),FrameAlpha,10)
+    else
+        Rect(lx,ly,size,size,th.Accent,40,10,1)
+        Text("N",lx+11,ly+7,rgb(255,255,255),20,Fonts.SystemBold,44,1)
+    end
+    if Input.Click and MouseIn(rx,ry,rw,62) and not State.Drag then
         BeginDrag()
         Input.Click = false
     end
-    HeaderText(State.WindowTitle or "GlassyUI", titleX, sectionY + 13,
-               titleWidth, 18, Fonts.SystemBold, th.Text, 42, 1, 4)
-    if subtitleLines > 0 then
-        HeaderText(State.WindowSubtitle, titleX, sectionY + 18 + titleLines * 24,
-                   brandWidth, 12, Fonts.System, th.TextDim, 42, 1, 4)
-    end
-    if hasLogo then
-        Rect(logoX,logoY,logoSize,logoSize,th.PanelHi,43,10,1)
-        DrawPicture(State.Logo,logoX,logoY,logoSize,logoSize,Layer(44),FrameAlpha,10)
-    end
-    Text("WORKSPACE",sectionX+11,sectionY+brandH+2,th.TextMuted,10,Fonts.SystemBold,42,0.95)
-
-    local rowY = sectionY + brandH + 22
-    local padX = 8
+    Line(rx+12,ry+65,rx+rw-12,ry+65,th.Stroke,42,1,1)
+    local rowY = ry + 77
     local rowH = Layout.TabRowH
-    local tabGap = Layout.TabGap
-    local iconSize = Layout.TabIcon
-    local visibleTabs = StartupRevealCount(#State.Tabs)
-    local settingsIndex = nil
+    local w = rw - 18
     for i, tab in ipairs(State.Tabs) do
-        if tab.IsSettings then settingsIndex = i break end
-    end
-
-    for i, tab in ipairs(State.Tabs) do
-        if i > visibleTabs then break end
         if not tab.Hidden then
-
-            local collapsedTabW = math.min(50, math.max(44, sectionW - 18))
-            local expandedTabPadX = 6
-            local sectionTabW = math.max(1, sectionW - expandedTabPadX * 2)
-
-            local collapsedScale = 1.00 - (0.04 * openAmt)
-            local tabRowH = rowH * collapsedScale
-            local narrowTabW = collapsedTabW
-            local wideTabW = sectionTabW
-            local w = narrowTabW + (wideTabW - narrowTabW) * openAmt
-
-            local x = sectionX + (sectionW - w) * 0.5
-            if tab.IsSettings then
-                w = rowH - 2
-                x = sectionX + sectionW - w - 6
+            local x = rx + (rw-w)/2
+            local y = tab.IsSettings and (ry+rh-rowH-12) or rowY
+            local hover = MouseIn(x,y,w,rowH)
+            local active = State.ActiveIndex == i
+            tab.Glow = Approach(tab.Glow or 0,active and 1 or 0,16,State.Delta)
+            tab.Hover = Approach(tab.Hover or 0,hover and 1 or 0,18,State.Delta)
+            if tab.Glow > 0.01 or tab.Hover > 0.01 then
+                Rect(x,y,w,rowH,mix(th.PanelHi,th.Accent,0.22*tab.Glow),40,12,math.max(tab.Glow,tab.Hover))
             end
-            local y = tab.IsSettings and (sectionY + sectionH - rowH - 11) or rowY
-            local yOffset = (rowH - tabRowH) * 0.5
-            y = y + yOffset
-
-            local railClipTop = sectionY + 1
-            local railClipBottom = sectionY + sectionH - 1
-            local insideAnimatedRail = (y >= railClipTop and y + tabRowH <= railClipBottom)
-
-            local hover = MouseIn(x, y, w, tabRowH)
-            local active = (State.ActiveIndex == i)
-
-            tab.Glow = Approach(tab.Glow or 0, active and 1 or 0, 16, State.Delta)
-            tab.Hover = Approach(tab.Hover or 0, hover and 1 or 0, 18, State.Delta)
-
-            if math.abs(tab.Glow - (active and 1 or 0)) < 0.01 then
-                tab.Glow = active and 1 or 0
+            if active then Rect(x-5,y+9,3,rowH-18,th.Accent,42,2,1) end
+            local iconSize = Layout.TabIcon
+            local ix, iy = x+(w-iconSize)/2,y+(rowH-iconSize)/2
+            local color = active and th.Accent or th.Text
+            if not DrawIconByName(tab.Icon or (tab.IsSettings and "settings" or "home"),ix,iy,iconSize,color,44,FrameAlpha) then
+                Text(string.upper(string.sub(tab.Name or "?",1,1)),ix+5,iy+1,color,19,Fonts.SystemBold,44,1)
             end
-            if math.abs(tab.Hover - (hover and 1 or 0)) < 0.01 then
-                tab.Hover = hover and 1 or 0
+            if hover then
+                if WantTooltip then WantTooltip(tab.Name) end
+                if Input.Click then State.ActiveIndex = i; Input.Click = false end
             end
-
-            local stateMix = math.max(tab.Hover * 0.5, tab.Glow)
-            local bgColor = mix(th.PanelHi, th.Accent, 0.17 * stateMix)
-            if stateMix > 0.01 then
-                Rect(x,y,w,tabRowH,bgColor,40,tabRowH/2,0.92*stateMix)
-            end
-            if tab.Glow > 0.01 then
-                Rect(x+3,y+10,3,tabRowH-20,th.Accent,42,2,tab.Glow)
-            end
-
-            local collapsedIconSize = math.min(iconSize, tabRowH - 10)
-            local centeredIconX = x + math.max(0, (narrowTabW - collapsedIconSize) / 2)
-            local expandedIconX = x + 12
-            local drawIconSize = iconSize + (collapsedIconSize - iconSize) * (1 - openAmt)
-            local iconX = tab.IsSettings and (x + (w - drawIconSize) / 2) or (centeredIconX + (expandedIconX - centeredIconX) * openAmt)
-            local iconY = y + (tabRowH - drawIconSize) / 2
-            local iconAlpha = 0.55 + 0.45 * math.max(tab.Glow, tab.Hover)
-            local iconColor = tab.Glow > 0.5 and th.Accent or th.TextDim
-
-            if not DrawIconByName(tab.Icon, iconX, iconY, drawIconSize,
-                                  iconColor, 44, iconAlpha * FrameAlpha) then
-
-                Rect(iconX + 3, iconY + 3, math.max(1, drawIconSize - 6), math.max(1, drawIconSize - 6),
-                     iconColor, 44, 2, iconAlpha)
-            end
-
-            if openAmt > 0.02 and not tab.IsSettings then
-                local labelX = x + 43
-                local labelRoom = w - (labelX - x) - 8
-                local labelY = TextMidY(y, tabRowH, Layout.TextSize + 2)
-                local labelColor = th.Text
-                local labelAlpha = openAmt * (0.7 + 0.3 * math.max(tab.Glow, tab.Hover))
-                if tab.Glow > 0.5 then
-                    labelColor = th.Text
-                    labelAlpha = openAmt
-                end
-                Text(tab.Name, math.floor(labelX + 0.5), math.floor(labelY + 0.5),
-                     labelColor, Layout.TextSize + 1, Fonts.SystemBold,
-                     45, labelAlpha, labelRoom)
-            end
-
-            if tab.IsSettings then
-                local footerSeparatorY = y - 12
-                Line(sectionX + 9, footerSeparatorY, sectionX + sectionW - 9, footerSeparatorY,
-                     th.Accent, 42, 1.5, FrameAlpha)
-                local profileX = sectionX + 7
-                local avatarSize = tabRowH - 2
-                local profileY = y + (tabRowH - avatarSize) / 2
-                local cx, cy = profileX + avatarSize / 2, profileY + avatarSize / 2
-                local avatarHover = MouseInCircle(cx, cy, avatarSize / 2 + 2)
-                if State.ProfileAvatar and State.ProfileAvatar.Image then
-                    DrawPicture(State.ProfileAvatar, profileX, profileY, avatarSize, avatarSize, Layer(44), FrameAlpha, avatarSize / 2)
-                else
-                    Circle(cx, cy, avatarSize / 2, th.Accent, 44, true, 1, 32, FrameAlpha)
-                    local initial = string.upper(string.sub(State.ProfileUsername or "P", 1, 1))
-                    local initialSize = 19
-                    Text(initial, cx - TextWidth(initial, initialSize, Fonts.SystemBold) / 2,
-                         cy - initialSize / 2 - 2, rgb(255, 255, 255), initialSize, Fonts.SystemBold, 45, FrameAlpha)
-                end
-                Circle(cx, cy, avatarSize / 2 + 1, th.Accent,
-                       46, false, avatarHover and 2.2 or 1.8, 40, FrameAlpha)
-                if State.ProfileNamesVisible ~= false then
-                    local nameX = profileX + avatarSize + 9
-                    local nameWidth = math.max(0, x - nameX - 6)
-                    if nameWidth > 12 then
-                        Text(State.ProfileDisplayName or tostring(LocalPlayer.DisplayName), nameX, y + 2,
-                             th.Text, 14, Fonts.SystemBold, 45, FrameAlpha, nameWidth)
-                        Text("@" .. (State.ProfileUsername or tostring(LocalPlayer.Name)), nameX, y + 21,
-                             th.TextDim, 12, Fonts.System, 45, FrameAlpha, nameWidth)
-                    end
-                end
-                if avatarHover and Input.Click then
-                    State.ProfileNamesVisible = not (State.ProfileNamesVisible ~= false)
-                    Input.Click = false
-                end
-            end
-
-            if hover and Input.Click then
-                if State.ActiveIndex ~= i then
-                    State.ActiveIndex = i
-                end
-                Input.Click = false
-            end
-
-            if not tab.IsSettings then
-                rowY = rowY + tabRowH + tabGap
-            end
+            if not tab.IsSettings then rowY = rowY + rowH + Layout.TabGap end
         end
     end
-
 end
 
 local function IsVisible(x, y, w, h)
@@ -6361,37 +6206,9 @@ local function EnsureGlobalSettingsTab(library)
     local appearance = Section.new(tab, "Appearance", "Global interface appearance", {})
     Controls.Dropdown(appearance, {
         Title = "Theme",
-        Options = {"Midnight", "Obsidian", "Burgundy", "Cyber", "Bubblegum", "Emerald", "Crimson", "Arctic", "Sunset", "Royal"},
+        Options = {"Lavender Glass", "Cloud Glass", "Rose Glass", "Mint Glass", "Midnight", "Obsidian", "Burgundy", "Cyber", "Bubblegum", "Emerald", "Crimson", "Arctic", "Sunset", "Royal"},
         Default = (State.Theme and State.Theme.Name) or "Midnight",
         Callback = function(value) SetThemeByName(value) end,
-    })
-    Controls.Dropdown(appearance, {
-        Title = "Background",
-        Options = {"none", "dots", "particles", "aurora", "snow", "rainfall"},
-        Default = type(State.Background) == "table" and (State.Background.Type or "none") or State.Background,
-        Callback = function(value) State.Background = NormalizeBackground(value) end,
-    })
-    Controls.Slider(appearance, {
-        Title = "Window opacity",
-        Description = "Controls how transparent or solid the main glass window is.",
-        Min = 35, Max = 100, Default = State.Settings.WindowOpacity, Step = 1,
-        Suffix = "%",
-        Callback = function(v)
-            State.Settings.WindowOpacity = v
-            GlassSurfaceAlpha = math.max(0.20, math.min(1, v / 100))
-        end,
-    })
-    Controls.Toggle(appearance, {
-        Title = "Background effects",
-        Description = "Master switch for the animated window background.",
-        Default = State.Settings.BackgroundEffects,
-        Callback = function(v) State.Settings.BackgroundEffects = v end,
-    })
-    Controls.Toggle(appearance, {
-        Title = "Border animation",
-        Description = "Animated comet travelling around the main border.",
-        Default = State.Settings.BorderComet,
-        Callback = function(v) State.Settings.BorderComet = v end,
     })
     Controls.Toggle(appearance, {
         Title = "Reduce animations",
@@ -7159,7 +6976,7 @@ else
     end)
 end
 
-Library.Version = "2.0.0"
+Library.Version = "2.1.0"
 
 GlassyUI = Library
 
