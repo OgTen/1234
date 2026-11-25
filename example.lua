@@ -10,7 +10,7 @@ local Window = GlassyUI:CreateWindow({
     MenuKey = "p",
     Opacity = 100,
     Background = "none",
-    -- Logo = "YOUR_NEXA_LOGO_URL",
+    Logo = "https://i.ibb.co/dwpNVBN2/Shinobu-Shocked.png",
 })
 
 local Main = Window:AddTab({ Title = "Main", Icon = "home", Select = true })
