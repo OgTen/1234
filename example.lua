@@ -13,8 +13,8 @@ local Window = GlassyUI:CreateWindow({
     Logo = "https://i.ibb.co/dwpNVBN2/Shinobu-Shocked.png",
 })
 
-local Main = Window:AddTab({ Title = "Main", Icon = "home", Select = true })
-local MainSection = Main:AddSection("Main controls", "Example controls using the GlassyUI API.")
+local Main = Window:AddTab({ Title = "Main", Subtitle = "Manage your script features", Icon = "home", Select = true })
+local MainSection = Main:AddSection("Main controls", "Example controls using the GlassyUI API.", {Icon = "settings"})
 
 MainSection:AddLabel({ Title = "Welcome", Description = "Your script is ready." })
 MainSection:AddToggle({
