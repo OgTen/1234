@@ -206,13 +206,13 @@ local Layout = {
     WindowH         = 540,
     WindowMinW      = 560,
     WindowMinH      = 390,
-    Corner          = 19,
+    Corner          = 24,
     TopbarH         = 0,
-    TabRailW        = 190,
+    TabRailW        = 205,
     TabRailMinW     = 94,
     TabRailNarrow   = 94,
 
-    TabRowH         = 43,
+    TabRowH         = 40,
     TabGap          = 6,
     TabIcon         = 20,
     SectionH        = 22,
@@ -225,17 +225,17 @@ local Layout = {
     SectionTitleH   = 18,
     SectionDescH    = 16,
 
-    ContentPadX     = 22,
-    ContentPadY     = 20,
+    ContentPadX     = 28,
+    ContentPadY     = 16,
     ContentGapY     = 10,
 
     RowHeight       = 32,
     RowColumnGap    = 8,
     RowGapY         = 7,
 
-    ToggleW         = 38,
-    ToggleH         = 20,
-    ToggleKnob      = 14,
+    ToggleW         = 42,
+    ToggleH         = 22,
+    ToggleKnob      = 16,
 
     SliderH         = 6,
     SliderKnob      = 6,
@@ -526,8 +526,8 @@ local function Rect(x, y, w, h, color, z, corner, alpha)
     if ActiveClipTop and z >= 40 and z < 59 then
         local cy, ch = ClipVertical(y, h)
         if ch <= 0 then DrawOrder = DrawOrder + 1; return end
-        y, h = cy, ch
         if cy ~= y or ch ~= h then corner = 0 end
+        y, h = cy, ch
     end
     if w <= 0 or h <= 0 then DrawOrder = DrawOrder + 1; return end
     local o, l = Take("Square")
@@ -1514,7 +1514,7 @@ local State = {
         KeybindOverlay = true,
         PerformanceOverlay = true,
         BackgroundEffects = true,
-        BorderComet = true,
+        BorderComet = false,
         WindowOpacity = 88,
         CompactOverlay = false,
         ToggleStyle = "Switch",
@@ -1913,7 +1913,7 @@ local function GetRequiredWindowHeight()
     local tabH = Layout.TabRowH * 0.96
     local tabsHeight = count > 0 and (count * tabH + (count - 1) * Layout.TabGap) or 0
 
-    local needed = 8 + brandH + 7 + tabsHeight + 12 + Layout.TabRowH + 31
+    local needed = 8 + brandH + 22 + tabsHeight + 12 + Layout.TabRowH + 31
 
     local viewportH = Camera and Camera.ViewportSize and Camera.ViewportSize.Y or 900
     return math.min(math.max(Layout.WindowMinH, math.ceil(needed)), math.max(340, viewportH - 36))
@@ -2020,86 +2020,16 @@ local function TickDrag(dt)
     State.Y = math.min(math.max(State.Y, 0), vp.Y - 40)
 end
 
-local function GlassBorderPoint(distance, x, y, w, h, cut)
-    local points = {{x+cut,y},{x+w,y},{x+w,y+h-cut},{x+w-cut,y+h},{x,y+h},{x,y+cut},{x+cut,y}}
-    local total = 0
-    for i = 1, #points-1 do
-        local a,b = points[i],points[i+1]
-        total = total + math.sqrt((b[1]-a[1])^2+(b[2]-a[2])^2)
-    end
-    local d = distance % total
-    for i = 1, #points-1 do
-        local a,b = points[i],points[i+1]
-        local len = math.sqrt((b[1]-a[1])^2+(b[2]-a[2])^2)
-        if d <= len then
-            local t = len > 0 and d/len or 0
-            return a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t
-        end
-        d = d-len
-    end
-    return x+cut,y
+local function CutPanel(x,y,w,h,r,color,z,alpha)
+    Rect(x,y,w,h,color,z,math.min(r,w/2,h/2),alpha)
 end
 
-local function CutPanel(x,y,w,h,cut,color,z,alpha)
-    cut = math.min(cut, w*0.25, h*0.25)
-    Rect(x+cut,y,w-cut,cut,color,z,0,alpha)
-    Rect(x,y+cut,w,h-2*cut,color,z,0,alpha)
-    Rect(x,y+h-cut,w-cut,cut,color,z,0,alpha)
-    Triangle(x,y+cut,x+cut,y,x+cut,y+cut,color,z,alpha)
-    Triangle(x+w-cut,y+h-cut,x+w,y+h-cut,x+w-cut,y+h,color,z,alpha)
-end
-
-local function CutOutline(x,y,w,h,cut,color,z,alpha,thickness)
-    local pts={{x+cut,y},{x+w,y},{x+w,y+h-cut},{x+w-cut,y+h},{x,y+h},{x,y+cut},{x+cut,y}}
-    for i=1,#pts-1 do
-        Line(pts[i][1],pts[i][2],pts[i+1][1],pts[i+1][2],color,z,thickness or 1,alpha)
-    end
+local function CutOutline(x,y,w,h,r,color,z,alpha,thickness)
+    Stroke(x,y,w,h,color,z,math.min(r,w/2,h/2),alpha)
 end
 
 local function DrawGlassBorder(th)
-    local x, y = State.X, State.Y
-    local w, h = State.W, State.H
-    local radius = math.min(19, math.max(2, math.min(w, h) / 2 - 1))
-
-    CutOutline(x, y, w, h, radius, th.Accent, 20, 0.88, 1.5)
-
-    if State.NoAnim then
-        return
-    end
-
-    local straightW = math.max(0, w - radius * 2)
-    local straightH = math.max(0, h - radius * 2)
-    local perimeter = 2 * (w + h - 2 * radius) + 2 * math.sqrt(2) * radius
-    local distance = (os.clock() * 96) % perimeter
-
-    if State.Settings and State.Settings.BorderComet == false then
-        return
-    end
-
-    local function DrawComet(headDistance, direction, accent, zBase)
-        local trailCount = 12
-        local trailLength = 48
-
-        for i = trailCount, 1, -1 do
-            local t = i / trailCount
-            local trailDistance = headDistance - direction * trailLength * t
-            local tx, ty = GlassBorderPoint(trailDistance, x, y, w, h, radius)
-            local strength = 1 - t
-            local trailAlpha = 0.07 + strength * 0.54
-            local trailSize = 1.15 + strength * 1.75
-            Circle(tx, ty, trailSize, accent,
-                   zBase + i, true, 1, 14, trailAlpha)
-        end
-
-        local hx, hy = GlassBorderPoint(headDistance, x, y, w, h, radius)
-        Circle(hx, hy, 6.0, accent, zBase + 20, true, 1, 20, 0.13)
-        Circle(hx, hy, 3.5, accent, zBase + 21, true, 1, 18, 1)
-        Circle(hx, hy, 1.6, Color3.new(1, 1, 1),
-               zBase + 22, true, 1, 14, 0.88)
-    end
-
-    DrawComet(distance, 1, th.AccentA, 21)
-    DrawComet((-distance) % perimeter, -1, th.AccentB or th.AccentA, 55)
+    Stroke(State.X, State.Y, State.W, State.H, th.Stroke, 20, Layout.Corner, 0.95)
 end
 
 local function DrawBackgroundEffect()
@@ -2245,39 +2175,15 @@ end
 
 local function DrawFrame(hideBackgroundImage)
     local th = State.Theme
-
-    CutPanel(State.X, State.Y, State.W, State.H, 19,
-             rgb(0, 0, 0), 10, GlassSurfaceAlpha * FrameAlpha)
-
+    local x,y,w,h = State.X,State.Y,State.W,State.H
+    Rect(x+2,y+5,w,h,rgb(20,20,40),9,Layout.Corner,0.18)
+    Rect(x,y,w,h,th.Base,10,Layout.Corner,GlassSurfaceAlpha)
     if State.BackgroundImage and not hideBackgroundImage then
-
-        local bx, by, bw, bh = State.X + 2, State.Y + 2, State.W - 4, State.H - 4
-        DrawPicture(State.BackgroundImage, bx, by, bw, bh,
-                    Layer(11), GlassSurfaceAlpha * FrameAlpha, 0)
-        local cut = 19
-        local mask = rgb(0, 0, 0)
-        Triangle(State.X, State.Y, State.X + cut, State.Y,
-                 State.X, State.Y + cut, mask, 13, FrameAlpha)
-        Triangle(State.X + State.W, State.Y + State.H,
-                 State.X + State.W - cut, State.Y + State.H,
-                 State.X + State.W, State.Y + State.H - cut, mask, 13, FrameAlpha)
+        DrawPicture(State.BackgroundImage,x+2,y+2,w-4,h-4,Layer(11),GlassSurfaceAlpha*FrameAlpha,Layout.Corner-2)
     end
-
-    Rect(State.X + Layout.Corner, State.Y + 1,
-         math.max(1, State.W - Layout.Corner * 2), 1,
-         Color3.new(1, 1, 1), 12, 0, 0.12)
-
     DrawBackgroundEffect()
-
-    local sidebarSectionPad = 10
-    local sidebarSectionRight = Geometry.RailX + sidebarSectionPad
-        + math.max(40, Geometry.RailW - sidebarSectionPad - sidebarSectionPad)
-    local separatorX = Geometry.RailX + Geometry.RailW - 2
-
-    Line(separatorX, Geometry.RailY + 1,
-         separatorX, State.Y + State.H - 2,
-         th.Accent, 14, 1, 0.50)
-
+    Rect(Geometry.ContentX+5,y+10,Geometry.ContentW-15,h-20,th.Panel,15,18,0.78)
+    Stroke(Geometry.ContentX+5,y+10,Geometry.ContentW-15,h-20,th.Stroke,16,18,0.8)
     DrawGlassBorder(th)
 end
 
@@ -2346,14 +2252,9 @@ local function DrawTabRail()
     local sectionW = math.max(40, railW - sectionPadX * 2)
     local sectionH = math.max(44, railH - 16)
 
-    local sx, sy, sw, sh = railX + 2, railY + 2, railW - 4, railH - 4
-    local bg = rgb(17, 17, 20)
-    local cut = 17
-    Rect(sx + cut, sy, sw - cut, sh, bg, 36, 0, GlassSurfaceAlpha * FrameAlpha)
-    Rect(sx, sy + cut, cut, sh - cut, bg, 36, 0, GlassSurfaceAlpha * FrameAlpha)
-    Triangle(sx + cut, sy, sx + cut, sy + cut, sx, sy + cut, bg, 36, GlassSurfaceAlpha * FrameAlpha)
-    Line(railX + railW - 2, railY + 12, railX + railW - 2, railY + railH - 12,
-         th.Stroke, 37, 1, 0.45 * FrameAlpha)
+    local sx, sy, sw, sh = railX + 10, railY + 10, railW - 15, railH - 20
+    Rect(sx,sy,sw,sh,th.Panel,36,18,0.85)
+    Stroke(sx,sy,sw,sh,th.Stroke,37,18,0.9)
 
     local brandWidth = sectionW - 20
     local logoSize = math.max(24, math.min(34, State.LogoSize or 28))
@@ -2376,22 +2277,12 @@ local function DrawTabRail()
                    brandWidth, 12, Fonts.System, th.TextDim, 42, 1, 4)
     end
     if hasLogo then
-        local logoCut = math.max(5, math.floor(logoSize * 0.23))
-        local logoBackground = rgb(18, 18, 22)
-        CutPanel(logoX, logoY, logoSize, logoSize, logoCut, logoBackground, 43, 1)
-        DrawPicture(State.Logo, logoX, logoY, logoSize, logoSize, Layer(44), FrameAlpha, 0)
-        Triangle(logoX, logoY, logoX + logoCut, logoY,
-                 logoX, logoY + logoCut, logoBackground, 45, 1)
-        Triangle(logoX + logoSize, logoY + logoSize,
-                 logoX + logoSize - logoCut, logoY + logoSize,
-                 logoX + logoSize, logoY + logoSize - logoCut, logoBackground, 45, 1)
-        CutOutline(logoX, logoY, logoSize, logoSize, logoCut, th.Accent, 46, 0.9, 1.5)
+        Rect(logoX,logoY,logoSize,logoSize,th.PanelHi,43,10,1)
+        DrawPicture(State.Logo,logoX,logoY,logoSize,logoSize,Layer(44),FrameAlpha,10)
     end
-    Line(sectionX + 9, sectionY + brandH,
-         sectionX + sectionW - 9, sectionY + brandH,
-         th.Accent, 42, 1.5, FrameAlpha)
+    Text("WORKSPACE",sectionX+11,sectionY+brandH+2,th.TextMuted,10,Fonts.SystemBold,42,0.95)
 
-    local rowY = sectionY + brandH + 7
+    local rowY = sectionY + brandH + 22
     local padX = 8
     local rowH = Layout.TabRowH
     local tabGap = Layout.TabGap
@@ -2442,18 +2333,15 @@ local function DrawTabRail()
                 tab.Hover = hover and 1 or 0
             end
 
-            local stateMix = tab.Hover * 0.55 + tab.Glow * 0.45
-            local bgColor = mix(rgb(22, 22, 27), rgb(33, 30, 42), stateMix)
-            local tabCut = 9
-            CutPanel(x, y, w, tabRowH, tabCut, bgColor, 40, FrameAlpha)
-
+            local stateMix = math.max(tab.Hover * 0.5, tab.Glow)
+            local bgColor = mix(th.PanelHi, th.Accent, 0.17 * stateMix)
+            if stateMix > 0.01 then
+                Rect(x,y,w,tabRowH,bgColor,40,tabRowH/2,0.92*stateMix)
+            end
             if tab.Glow > 0.01 then
-                local activeColor = mix(bgColor, th.Accent, tab.Glow * 0.13)
-                CutPanel(x, y, w, tabRowH, tabCut, activeColor, 41, FrameAlpha)
+                Rect(x+3,y+10,3,tabRowH-20,th.Accent,42,2,tab.Glow)
             end
 
-            local borderAlpha = active and 0.65 or (hover and 0.30 or 0.16)
-            CutOutline(x, y, w, tabRowH, tabCut, th.Accent, 42, borderAlpha * FrameAlpha, 1)
             local collapsedIconSize = math.min(iconSize, tabRowH - 10)
             local centeredIconX = x + math.max(0, (narrowTabW - collapsedIconSize) / 2)
             local expandedIconX = x + 12
@@ -2497,7 +2385,7 @@ local function DrawTabRail()
                 if State.ProfileAvatar and State.ProfileAvatar.Image then
                     DrawPicture(State.ProfileAvatar, profileX, profileY, avatarSize, avatarSize, Layer(44), FrameAlpha, avatarSize / 2)
                 else
-                    Circle(cx, cy, avatarSize / 2, rgb(29, 26, 36), 44, true, 1, 32, FrameAlpha)
+                    Circle(cx, cy, avatarSize / 2, th.Accent, 44, true, 1, 32, FrameAlpha)
                     local initial = string.upper(string.sub(State.ProfileUsername or "P", 1, 1))
                     local initialSize = 19
                     Text(initial, cx - TextWidth(initial, initialSize, Fonts.SystemBold) / 2,
@@ -2510,9 +2398,9 @@ local function DrawTabRail()
                     local nameWidth = math.max(0, x - nameX - 6)
                     if nameWidth > 12 then
                         Text(State.ProfileDisplayName or tostring(LocalPlayer.DisplayName), nameX, y + 2,
-                             rgb(255, 255, 255), 14, Fonts.SystemBold, 45, FrameAlpha, nameWidth)
+                             th.Text, 14, Fonts.SystemBold, 45, FrameAlpha, nameWidth)
                         Text("@" .. (State.ProfileUsername or tostring(LocalPlayer.Name)), nameX, y + 21,
-                             rgb(255, 255, 255), 12, Fonts.System, 45, FrameAlpha, nameWidth)
+                             th.TextDim, 12, Fonts.System, 45, FrameAlpha, nameWidth)
                     end
                 end
                 if avatarHover and Input.Click then
@@ -3463,30 +3351,9 @@ local function DrawSection(section, x, y, w)
     local clippedH = math.max(0, clippedBottom - clippedTop)
     if clippedH <= 0 then return end
 
-    if clippedTop == y and clippedBottom == y + totalH then
-        CutPanel(x, y, w, totalH, 10, State.Theme.Panel, 40, GlassSurfaceAlpha * FrameAlpha)
-        CutOutline(x, y, w, totalH, 10, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 0.82 * FrameAlpha, 1)
-    else
-        local cut = math.min(10, w * 0.25, clippedH * 0.25)
-        local fill, alpha = State.Theme.Panel, GlassSurfaceAlpha * FrameAlpha
-        local edgeAlpha = 0.82 * FrameAlpha
-
-        if clippedH > cut * 2 then
-            Rect(x + cut, clippedTop, w - cut, cut, fill, 40, 0, alpha)
-            Rect(x, clippedTop + cut, w, clippedH - cut * 2, fill, 40, 0, alpha)
-            Rect(x, clippedBottom - cut, w - cut, cut, fill, 40, 0, alpha)
-            Triangle(x, clippedTop + cut, x + cut, clippedTop, x + cut, clippedTop + cut, fill, 40, alpha)
-            Triangle(x + w - cut, clippedBottom - cut, x + w, clippedBottom - cut, x + w - cut, clippedBottom, fill, 40, alpha)
-            Line(x + cut, clippedTop, x + w, clippedTop, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-            Line(x, clippedTop + cut, x + cut, clippedTop, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-            Line(x, clippedTop + cut, x, clippedBottom, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-            Line(x, clippedBottom, x + w - cut, clippedBottom, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-            Line(x + w - cut, clippedBottom, x + w, clippedBottom - cut, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-            Line(x + w, clippedTop, x + w, clippedBottom - cut, mix(State.Theme.Stroke, State.Theme.Accent, 0.42), 41, 1.3, edgeAlpha)
-        else
-            Rect(x, clippedTop, w, clippedH, fill, 40, 0, alpha)
-        end
-    end
+    local radius = math.min(16, clippedH/2)
+    Rect(x,clippedTop,w,clippedH,State.Theme.PanelHi,40,radius,0.88)
+    Stroke(x,clippedTop,w,clippedH,State.Theme.Divider,41,radius,0.8)
 
     local headerVisible = (y + headerH > viewportTop and y < viewportBottom)
     if headerVisible then
@@ -5903,7 +5770,7 @@ local function DrawHUDBoxes()
                 Input.Click = false
             end
 
-            CutPanel(box.X, box.Y, boxW, totalH, 10, rgb(13, 16, 23), 351, 0.96)
+            CutPanel(box.X, box.Y, boxW, totalH, 10, th.Panel, 351, 0.96)
             CutOutline(box.X, box.Y, boxW, totalH, 10, th.Accent, 352, 0.88, 1)
 
             local measuredHeaderW = TextWidth(header, headerSize, headerFont)
@@ -6252,7 +6119,7 @@ DrawKeybindOverlay = function()
     local previousAlpha = FrameAlpha
     FrameAlpha = KeybindHUD.Reveal or 0
 
-    CutPanel(x, y, w, h, 10, rgb(13, 16, 23), 331, 0.96)
+    CutPanel(x, y, w, h, 10, th.Panel, 331, 0.96)
     CutOutline(x, y, w, h, 10, th.Accent, 332, 0.88, 1)
 
     local header = "HOTKEYS"
@@ -6406,7 +6273,7 @@ DrawPerformanceOverlay = function()
     local previousAlpha = FrameAlpha
     FrameAlpha = PerformanceHUD.Reveal or 0
 
-    CutPanel(x, y, w, h, 10, rgb(13, 16, 23), 341, 0.96)
+    CutPanel(x, y, w, h, 10, th.Panel, 341, 0.96)
     CutOutline(x, y, w, h, 10, th.Accent, 342, 0.88, 1)
 
     local header = "PERFORMANCE"
@@ -6850,7 +6717,7 @@ function Library:CreateWindow(opts)
     State.ApplyInputState(true)
     return self
 end
-Library.Version       = "1.0.0"
+Library.Version       = "2.0.0"
 Library.Themes         = Themes
 Library.Layout         = Layout
 Library.State          = State
@@ -7292,7 +7159,7 @@ else
     end)
 end
 
-Library.Version = "1.0.0"
+Library.Version = "2.0.0"
 
 GlassyUI = Library
 
