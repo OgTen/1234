@@ -14,19 +14,6 @@ local FontMetrics = {
     [Fonts.Pixel]  = 0.50,
 }
 
-Fonts.ResolveOverlay = function(value, fallback)
-    if value == nil then return fallback or Fonts.SystemBold end
-    if type(value) ~= "string" then return value end
-    local key = string.lower(value)
-    key = string.gsub(key, "[%s_%-]", "")
-    if key == "system" then return Fonts.System end
-    if key == "systembold" or key == "bold" then return Fonts.SystemBold end
-    if key == "ui" then return Fonts.UI end
-    if key == "monospace" or key == "mono" then return Fonts.Monospace end
-    if key == "pixel" then return Fonts.Pixel end
-    return fallback or Fonts.SystemBold
-end
-
 local function rgb(r, g, b) return Color3.fromRGB(r, g, b) end
 local function mix(a, b, t)
     return Color3.new(
@@ -36,145 +23,26 @@ local function mix(a, b, t)
     )
 end
 
-local Themes = {
-    {
-        Name="Lavender Glass",
-        Base=rgb(169,164,248), Panel=rgb(246,247,255), PanelHi=rgb(255,255,255),
-        Stroke=rgb(255,255,255), Divider=rgb(218,222,248),
-        Text=rgb(27,43,75), TextDim=rgb(75,95,133), TextMuted=rgb(107,124,155),
-        AccentA=rgb(96,165,250), AccentB=rgb(99,102,241), Accent=rgb(99,102,241),
-        AccentDim=rgb(165,168,246), Track=rgb(222,226,248), TrackFill=rgb(99,102,241),
-        Danger=rgb(185,28,28), Warning=rgb(180,83,9), Success=rgb(21,128,61),
-    },
-    {
-        Name="Cloud Glass",
-        Base=rgb(207,220,247), Panel=rgb(249,251,255), PanelHi=rgb(255,255,255),
-        Stroke=rgb(255,255,255), Divider=rgb(220,229,247),
-        Text=rgb(27,43,75), TextDim=rgb(75,95,133), TextMuted=rgb(107,124,155),
-        AccentA=rgb(96,165,250), AccentB=rgb(139,140,246), Accent=rgb(79,113,221),
-        AccentDim=rgb(165,180,252), Track=rgb(225,233,249), TrackFill=rgb(96,165,250),
-        Danger=rgb(185,28,28), Warning=rgb(180,83,9), Success=rgb(21,128,61),
-    },
-    {
-        Name="Rose Glass",
-        Base=rgb(239,204,226), Panel=rgb(255,249,253), PanelHi=rgb(255,255,255),
-        Stroke=rgb(255,255,255), Divider=rgb(244,220,237),
-        Text=rgb(65,38,67), TextDim=rgb(117,82,119), TextMuted=rgb(154,116,157),
-        AccentA=rgb(244,114,182), AccentB=rgb(168,85,247), Accent=rgb(190,91,174),
-        AccentDim=rgb(229,168,218), Track=rgb(246,225,241), TrackFill=rgb(219,112,190),
-        Danger=rgb(190,48,73), Warning=rgb(180,100,25), Success=rgb(36,142,91),
-    },
-    {
-        Name="Mint Glass",
-        Base=rgb(190,226,218), Panel=rgb(247,255,252), PanelHi=rgb(255,255,255),
-        Stroke=rgb(255,255,255), Divider=rgb(214,239,231),
-        Text=rgb(28,59,56), TextDim=rgb(68,105,99), TextMuted=rgb(105,143,136),
-        AccentA=rgb(52,190,166), AccentB=rgb(74,144,220), Accent=rgb(39,163,145),
-        AccentDim=rgb(145,211,198), Track=rgb(220,241,235), TrackFill=rgb(52,190,166),
-        Danger=rgb(185,50,70), Warning=rgb(180,111,31), Success=rgb(21,128,81),
-    },
-    {
-
-        Name="Midnight",
-        Base=rgb(18,14,28), Panel=rgb(27,21,40), PanelHi=rgb(38,29,54),
-        Stroke=rgb(70,55,94), Divider=rgb(57,44,79),
-        Text=rgb(249,245,255), TextDim=rgb(205,190,229), TextMuted=rgb(139,119,168),
-        AccentA=rgb(176,112,255), AccentB=rgb(129,91,246), Accent=rgb(163,103,250),
-        AccentDim=rgb(96,61,148), Track=rgb(48,37,65), TrackFill=rgb(176,112,255),
-        Danger=rgb(248,82,111), Warning=rgb(244,188,87), Success=rgb(88,216,151),
-    },
-    {
-
-        Name="Obsidian",
-        Base=rgb(14,15,17), Panel=rgb(22,23,26), PanelHi=rgb(32,33,37),
-        Stroke=rgb(61,63,69), Divider=rgb(49,51,56),
-        Text=rgb(245,246,248), TextDim=rgb(194,197,202), TextMuted=rgb(126,130,138),
-        AccentA=rgb(225,229,235), AccentB=rgb(158,164,174), Accent=rgb(211,215,222),
-        AccentDim=rgb(111,115,122), Track=rgb(41,43,47), TrackFill=rgb(225,229,235),
-        Danger=rgb(244,83,104), Warning=rgb(238,183,82), Success=rgb(83,211,145),
-    },
-    {
-
-        Name="Burgundy",
-        Base=rgb(29,12,22), Panel=rgb(42,17,31), PanelHi=rgb(56,23,41),
-        Stroke=rgb(93,42,68), Divider=rgb(76,34,56),
-        Text=rgb(255,241,248), TextDim=rgb(225,178,202), TextMuted=rgb(157,102,130),
-        AccentA=rgb(222,67,133), AccentB=rgb(174,51,106), Accent=rgb(211,61,126),
-        AccentDim=rgb(125,38,77), Track=rgb(62,28,46), TrackFill=rgb(222,67,133),
-        Danger=rgb(248,75,99), Warning=rgb(241,177,81), Success=rgb(83,207,143),
-    },
-    {
-
-        Name="Cyber",
-        Base=rgb(7,17,20), Panel=rgb(10,27,31), PanelHi=rgb(14,39,44),
-        Stroke=rgb(28,78,84), Divider=rgb(22,63,69),
-        Text=rgb(235,255,255), TextDim=rgb(159,220,222), TextMuted=rgb(87,151,155),
-        AccentA=rgb(29,229,224), AccentB=rgb(31,190,205), Accent=rgb(25,215,212),
-        AccentDim=rgb(17,124,125), Track=rgb(20,52,56), TrackFill=rgb(29,229,224),
-        Danger=rgb(250,79,108), Warning=rgb(244,190,79), Success=rgb(60,222,151),
-    },
-    {
-
-        Name="Bubblegum",
-        Base=rgb(30,15,27), Panel=rgb(44,21,39), PanelHi=rgb(59,28,52),
-        Stroke=rgb(100,48,85), Divider=rgb(82,39,70),
-        Text=rgb(255,242,251), TextDim=rgb(233,183,219), TextMuted=rgb(164,104,148),
-        AccentA=rgb(255,94,184), AccentB=rgb(239,121,205), Accent=rgb(250,99,183),
-        AccentDim=rgb(149,58,111), Track=rgb(67,31,58), TrackFill=rgb(255,94,184),
-        Danger=rgb(255,75,110), Warning=rgb(246,184,91), Success=rgb(87,214,155),
-    },
-    {
-
-        Name="Emerald",
-        Base=rgb(8,20,14), Panel=rgb(12,31,21), PanelHi=rgb(17,43,29),
-        Stroke=rgb(35,82,55), Divider=rgb(28,67,45),
-        Text=rgb(237,255,245), TextDim=rgb(165,219,187), TextMuted=rgb(93,153,117),
-        AccentA=rgb(55,226,126), AccentB=rgb(39,190,103), Accent=rgb(49,213,119),
-        AccentDim=rgb(30,125,72), Track=rgb(23,55,37), TrackFill=rgb(55,226,126),
-        Danger=rgb(246,82,102), Warning=rgb(239,187,78), Success=rgb(55,226,126),
-    },
-    {
-
-        Name="Crimson",
-        Base=rgb(27,10,12), Panel=rgb(40,14,18), PanelHi=rgb(54,19,24),
-        Stroke=rgb(96,34,42), Divider=rgb(79,27,34),
-        Text=rgb(255,240,242), TextDim=rgb(229,171,178), TextMuted=rgb(160,96,105),
-        AccentA=rgb(255,65,78), AccentB=rgb(219,43,60), Accent=rgb(244,58,73),
-        AccentDim=rgb(145,34,44), Track=rgb(64,22,28), TrackFill=rgb(255,65,78),
-        Danger=rgb(255,65,78), Warning=rgb(242,173,74), Success=rgb(78,209,139),
-    },
-    {
-
-        Name="Arctic",
-        Base=rgb(9,16,29), Panel=rgb(13,24,42), PanelHi=rgb(18,34,57),
-        Stroke=rgb(39,70,105), Divider=rgb(32,58,87),
-        Text=rgb(240,247,255), TextDim=rgb(175,204,235), TextMuted=rgb(102,139,180),
-        AccentA=rgb(79,153,255), AccentB=rgb(106,178,255), Accent=rgb(75,145,244),
-        AccentDim=rgb(46,88,148), Track=rgb(27,47,72), TrackFill=rgb(79,153,255),
-        Danger=rgb(248,88,113), Warning=rgb(244,190,88), Success=rgb(80,214,157),
-    },
-    {
-
-        Name="Sunset",
-        Base=rgb(30,16,10), Panel=rgb(44,23,14), PanelHi=rgb(58,31,18),
-        Stroke=rgb(98,55,31), Divider=rgb(80,45,26),
-        Text=rgb(255,246,237), TextDim=rgb(234,199,168), TextMuted=rgb(166,126,96),
-        AccentA=rgb(255,137,61), AccentB=rgb(239,94,43), Accent=rgb(250,122,54),
-        AccentDim=rgb(149,72,34), Track=rgb(66,37,23), TrackFill=rgb(255,137,61),
-        Danger=rgb(247,76,89), Warning=rgb(255,177,66), Success=rgb(87,208,137),
-    },
-    {
-
-        Name="Royal",
-        Base=rgb(24,20,10), Panel=rgb(36,30,14), PanelHi=rgb(49,41,19),
-        Stroke=rgb(86,72,35), Divider=rgb(70,59,29),
-        Text=rgb(255,250,232), TextDim=rgb(228,210,158), TextMuted=rgb(156,137,87),
-        AccentA=rgb(247,199,72), AccentB=rgb(224,164,43), Accent=rgb(241,188,62),
-        AccentDim=rgb(139,108,38), Track=rgb(57,48,24), TrackFill=rgb(247,199,72),
-        Danger=rgb(244,79,96), Warning=rgb(247,199,72), Success=rgb(85,207,139),
-    },
-
-}
+local Themes = {}
+local function AddAccentTheme(name, r, g, b)
+    local accent = rgb(r,g,b)
+    local base, panel, hi = rgb(18,19,23), rgb(24,25,30), rgb(34,35,41)
+    Themes[#Themes+1] = { Name=name, Base=base, Panel=panel, PanelHi=hi,
+        Stroke=mix(rgb(48,49,57),accent,0.25), Divider=mix(rgb(39,40,47),accent,0.25),
+        Text=rgb(242,243,247), TextDim=rgb(186,189,200), TextMuted=rgb(128,132,146),
+        Accent=accent, AccentA=accent, AccentB=accent, AccentDim=mix(hi,accent,0.55),
+        Track=rgb(43,44,51), TrackFill=accent, Danger=rgb(245,87,100),
+        Warning=rgb(235,198,76), Success=rgb(65,210,139) }
+end
+AddAccentTheme("Blue", 90, 155, 255)
+AddAccentTheme("Red", 245, 87, 100)
+AddAccentTheme("Pink", 244, 112, 183)
+AddAccentTheme("Purple", 167, 125, 250)
+AddAccentTheme("Green", 65, 210, 139)
+AddAccentTheme("Cyan", 45, 210, 222)
+AddAccentTheme("Orange", 250, 151, 73)
+AddAccentTheme("Yellow", 235, 198, 76)
+AddAccentTheme("White", 218, 222, 232)
 
 local BackgroundNames = {
     none = true,
@@ -1511,18 +1379,16 @@ local State = {
 
     NoAnim      = false,
     Settings = {
-        KeybindOverlay = true,
-        PerformanceOverlay = true,
+
+
         BackgroundEffects = false,
         BorderComet = false,
         WindowOpacity = 100,
-        CompactOverlay = false,
+
         ToggleStyle = "Switch",
         ConfigName = "default",
     },
 
-    OverlayRevealTime = 0,
-    OverlayNextRevealAt = 1.0,
 
     WindowTitle    = "Glassy UI",
     WindowSubtitle = "",
@@ -1552,8 +1418,7 @@ local State = {
     ThemeIndex  = 1,
     ThemeTween  = {},
 
-    Notifications = {},
-    NotificationPosition = "top_left",
+
 }
 
 do
@@ -2253,7 +2118,6 @@ local function DrawTabRail()
             if tab.Glow > 0.01 or tab.Hover > 0.01 then
                 Rect(x,y,w,rowH,mix(th.PanelHi,th.Accent,0.22*tab.Glow),40,12,math.max(tab.Glow,tab.Hover))
             end
-            if active then Rect(x-5,y+9,3,rowH-18,th.Accent,42,2,1) end
             local iconSize = Layout.TabIcon
             local ix, iy = x+(w-iconSize)/2,y+(rowH-iconSize)/2
             local color = active and th.Accent or th.Text
@@ -3078,11 +2942,9 @@ local function InputInline(row, x, y, w)
     return maxH
 end
 
-local DrawKeybindOverlay
-local UpdateKeybindOverlayInput
-local DrawPerformanceOverlay
-local UpdatePerformanceOverlayInput
-local TickPerformanceOverlay
+
+
+
 
 local ContentCursor = { y = 0 }
 
@@ -5032,7 +4894,7 @@ end
 
 local function SetThemeByName(name)
     for i, th in ipairs(Themes) do
-        if th.Name == name then
+        if string.lower(th.Name) == string.lower(tostring(name)) then
             SwitchTheme(i)
             return true
         end
@@ -5044,177 +4906,6 @@ local function NextTheme()
     local nxt = State.ThemeIndex + 1
     if nxt > #Themes then nxt = 1 end
     SwitchTheme(nxt)
-end
-
-local Notification = {}
-Notification.__index = Notification
-
-local NoteColors = {
-    info    = { accent = "Accent",   icon = "info",    label = "INFO"    },
-    success = { accent = "Success",  icon = "success", label = "SUCCESS" },
-    warning = { accent = "Warning",  icon = "warning", label = "WARNING" },
-    error   = { accent = "Danger",   icon = "error",   label = "ERROR"   },
-}
-
-local function NormalizeNotificationPosition(value)
-    local p = string.lower(tostring(value or "top_left"))
-    p = string.gsub(p, "%s+", "_")
-    p = string.gsub(p, "-", "_")
-    if p == "topleft" then p = "top_left" end
-    if p == "topright" then p = "top_right" end
-    if p == "bottomleft" then p = "bottom_left" end
-    if p == "bottomright" then p = "bottom_right" end
-
-    if p ~= "top_left" and p ~= "top_right"
-       and p ~= "bottom_left" and p ~= "bottom_right" then
-        p = "top_left"
-    end
-    return p
-end
-
-local function Notify(opts)
-    opts = opts or {}
-    local logoSource = opts.Logo or opts.logo
-    local entry = setmetatable({
-        Title = tostring(opts.Title or opts.title or "Notice"),
-        Content = tostring(opts.Content or opts.content or ""),
-        Type = string.lower(tostring(opts.Type or opts.type or "info")),
-        Duration = math.max(0.5, tonumber(opts.Duration or opts.duration) or 4),
-        Fade = 0, Slide = 0, Life = 0,
-        TargetLife = math.max(0.5, tonumber(opts.Duration or opts.duration) or 4),
-        Done = false,
-        Logo = logoSource and LoadPicture(logoSource, "notification_logo") or nil,
-    }, Notification)
-    State.Notifications[#State.Notifications + 1] = entry
-    return entry
-end
-
-local function TickNotifications(dt)
-    local list = State.Notifications
-    local i = 1
-
-    while i <= #list do
-        local n = list[i]
-        n.Life = n.Life + dt
-
-        local targetFade, targetSlide
-        local fadeDuration = 0.42
-
-        if n.Life < 0.22 then
-            local t = n.Life / 0.22
-            targetFade = t
-            targetSlide = (1 - t) * 34
-        elseif n.Life <= n.TargetLife then
-            targetFade = 1
-            targetSlide = 0
-        else
-            local fadeT = Clamp((n.Life - n.TargetLife) / fadeDuration, 0, 1)
-            targetFade = 1 - fadeT
-            targetSlide = fadeT * 26
-        end
-
-        n.Fade  = Approach(n.Fade, targetFade, 22, dt)
-        n.Slide = Approach(n.Slide, targetSlide, 20, dt)
-
-        if n.Life >= n.TargetLife + fadeDuration and n.Fade < 0.02 then
-            n.Done = true
-        end
-
-        if n.Done then
-            HidePicture(n.Logo)
-            if n.Logo and n.Logo.Image then pcall(function() n.Logo.Image:Remove() end) end
-            table.remove(list, i)
-        else
-            i = i + 1
-        end
-    end
-end
-
-local function NotificationLines(value, width, size, font)
-    local lines = {}
-    local charW = size * (FontMetrics[font] or 0.5)
-    local limit = math.max(1, math.floor(width / charW))
-    for paragraph in (tostring(value) .. "\\n"):gmatch("(.-)\\n") do
-        local current = ""
-        for word in paragraph:gmatch("%S+") do
-            while #word > limit do
-                if current ~= "" then lines[#lines + 1] = current; current = "" end
-                lines[#lines + 1] = word:sub(1, limit)
-                word = word:sub(limit + 1)
-            end
-            if word ~= "" then
-                if current == "" then current = word
-                elseif #current + #word + 1 <= limit then current = current .. " " .. word
-                else lines[#lines + 1] = current; current = word end
-            end
-        end
-        lines[#lines + 1] = current
-    end
-    return lines
-end
-
-local function DrawNotifications()
-    local th = State.Theme
-    local vp = Camera.ViewportSize
-    local pos = NormalizeNotificationPosition(State.NotificationPosition)
-    local notW, gap = 350, 10
-    local marginX, marginY, cut = 18, 18, 19
-    local fromTop = pos == "top_left" or pos == "top_right"
-    local fromLeft = pos == "top_left" or pos == "bottom_left"
-    local stackOffset = 0
-    for _, n in ipairs(State.Notifications) do
-        local hasLogo = n.Logo ~= nil
-        local textW = hasLogo and (notW - 139) or (notW - 72)
-        local titleLines = NotificationLines(n.Title, textW, 15, Fonts.SystemBold)
-        local contentLines = n.Content ~= "" and NotificationLines(n.Content, textW, 11, Fonts.System) or {}
-        local titleH, contentH = #titleLines * 18, #contentLines * 15
-        local notH = math.max(90, 18 + titleH + (contentH > 0 and 7 + contentH or 0) + 18)
-        local a = n.Fade
-        if a > 0.005 then
-            local ny = fromTop and (marginY + stackOffset) or (vp.Y - marginY - notH - stackOffset)
-            local baseX = fromLeft and marginX or (vp.X - marginX - notW)
-            local nx = baseX + (fromLeft and -1 or 1) * n.Slide
-            local colors = NoteColors[n.Type] or NoteColors.info
-            local accent = th[colors.accent] or th.Accent
-            local bg = rgb(23, 23, 34)
-            local x2, y2 = nx + notW, ny + notH
-            local fillAlpha = 0.97 * a
-            Rect(nx + cut, ny, notW - cut, cut, bg, 371, 0, fillAlpha)
-            Rect(nx, ny + cut, notW, notH - 2 * cut, bg, 371, 0, fillAlpha)
-            Rect(nx, y2 - cut, notW - cut, cut, bg, 371, 0, fillAlpha)
-            Triangle(nx, ny + cut, nx + cut, ny, nx + cut, ny + cut, bg, 371, fillAlpha)
-            Triangle(x2 - cut, y2 - cut, x2, y2 - cut, x2 - cut, y2, bg, 371, fillAlpha)
-            local outline = th.Accent
-            Line(nx + cut, ny, x2, ny, outline, 373, 1.5, a)
-            Line(x2, ny, x2, y2 - cut, outline, 373, 1.5, a)
-            Line(x2, y2 - cut, x2 - cut, y2, outline, 373, 1.5, a)
-            Line(x2 - cut, y2, nx, y2, outline, 373, 1.5, a)
-            Line(nx, y2, nx, ny + cut, outline, 373, 1.5, a)
-            Line(nx, ny + cut, nx + cut, ny, outline, 373, 1.5, a)
-            local cx, cy = nx + 30, ny + 35
-            Circle(cx, cy, 13, mix(bg, accent, 0.17), 374, true, 1, 28, a)
-            DrawIconByName(colors.icon, cx - 9, cy - 9, 18, accent, 376, a)
-            local textX = nx + 53
-            local titleY = ny + 18
-            for i, line in ipairs(titleLines) do
-                Text(line, textX, titleY + (i - 1) * 18, th.Text, 15, Fonts.SystemBold, 378, a)
-            end
-            if #contentLines > 0 then
-                local contentY = titleY + titleH + 7
-                for i, line in ipairs(contentLines) do
-                    Text(line, textX, contentY + (i - 1) * 15, th.TextDim, 11, Fonts.System, 378, 0.90 * a)
-                end
-            end
-            if hasLogo then
-                local dividerX = x2 - 94
-                Line(dividerX, ny + 16, dividerX, y2 - 16, th.Divider, 375, 1, 0.85 * a)
-                local logoSize = 52
-                local logoX, logoY = x2 - 73, ny + (notH - logoSize) / 2
-                DrawPicture(n.Logo, logoX, logoY, logoSize, logoSize, Layer(377), a, 6)
-            end
-        end
-        stackOffset = stackOffset + notH + gap
-    end
 end
 
 local Tooltip = {
@@ -5288,396 +4979,6 @@ local function ClearTooltip()
     Tooltip.Fade = 0
 end
 
-local HUDBox = {}
-HUDBox.__index = HUDBox
-
-local HUDBoxes = {}
-
-function HUDBox.new(opts)
-    opts = opts or {}
-
-    local visible = opts.Visible
-    if visible == nil then visible = opts.visible end
-    if visible == nil then visible = opts.SetVisible end
-    if visible == nil then visible = opts.setVisible end
-    if visible == nil then visible = true end
-
-    local dynamic = opts.Dynamic
-    if dynamic == nil then dynamic = opts.dynamic end
-    dynamic = dynamic and true or false
-
-    local dynamicWidth = opts.DynamicWidth
-    if dynamicWidth == nil then dynamicWidth = opts.dynamicWidth end
-    if dynamicWidth == nil then dynamicWidth = dynamic end
-    if type(dynamicWidth) == "string" and string.lower(dynamicWidth) == "expand" then
-        dynamicWidth = "expand"
-    else
-        dynamicWidth = dynamicWidth and true or false
-    end
-
-    local dynamicHeight = opts.DynamicHeight
-    if dynamicHeight == nil then dynamicHeight = opts.dynamicHeight end
-    if dynamicHeight == nil then dynamicHeight = dynamic end
-    dynamicHeight = dynamicHeight and true or false
-
-    local explicitW = tonumber(opts.Width or opts.width or opts.W or opts.w)
-    local explicitH = tonumber(opts.Height or opts.height or opts.H or opts.h)
-
-    local self = setmetatable({
-        Title       = tostring(opts.Title or opts.title or "Overlay"),
-        X           = tonumber(opts.X or opts.x) or 40,
-        Y           = tonumber(opts.Y or opts.y) or 40,
-        W           = math.max(100, explicitW or 200),
-        BaseW       = math.max(100, explicitW or 200),
-        H           = explicitH,
-        Lines       = {},
-        Visible     = visible and true or false,
-        Dynamic     = dynamic,
-        DynamicWidth  = dynamicWidth,
-        DynamicHeight = dynamicHeight,
-        MaxLines    = Clamp(math.floor(tonumber(opts.MaxLines or opts.maxLines) or 100), 1, 100),
-        MaxChars    = Clamp(math.floor(tonumber(opts.MaxWidth or opts.maxWidth or opts.MaxChars or opts.maxChars) or 50), 8, 50),
-        Font        = Fonts.ResolveOverlay(opts.Font or opts.font, Fonts.SystemBold),
-        HeaderFont  = Fonts.ResolveOverlay(opts.HeaderFont or opts.headerFont, Fonts.SystemBold),
-        FontSize    = Clamp(tonumber(opts.FontSize or opts.fontSize) or 10, 7, 18),
-        HeaderSize  = Clamp(tonumber(opts.HeaderSize or opts.headerSize) or 12, 8, 20),
-        LineSpacing = Clamp(tonumber(opts.LineSpacing or opts.lineSpacing) or 12, 0, 24),
-        MinLineHeight = Clamp(tonumber(opts.LineHeight or opts.lineHeight or opts.MinLineHeight or opts.minLineHeight) or 25, 8, 48),
-        Pin         = false,
-        _drag       = nil,
-        _hover      = 0,
-        _reveal     = 0,
-        _revealOrder = #HUDBoxes + 1,
-        _layoutDirty = true,
-        _layoutW = nil,
-        _layoutH = nil,
-        _lineH = nil,
-    }, HUDBox)
-
-    if self.H then self.H = math.max(48, self.H) end
-
-    HUDBoxes[#HUDBoxes + 1] = self
-    return self
-end
-
-function HUDBox:SetVisible(v)
-    local nextVisible = v and true or false
-    if nextVisible and not self.Visible then
-        self._reveal = 0
-        local now = State.OverlayRevealTime or 0
-        local queued = math.max(now + 0.5, State.OverlayNextRevealAt or 0)
-        self._revealAt = queued
-        State.OverlayNextRevealAt = queued + 0.5
-    end
-    self.Visible = nextVisible
-    if not self.Visible then self._drag = nil end
-    return self
-end
-
-function HUDBox:GetVisible()
-    return self.Visible
-end
-
-function HUDBox:Toggle()
-    return self:SetVisible(not self.Visible)
-end
-
-function HUDBox:SetTitle(title)
-    self.Title = tostring(title or "")
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetSize(width, height)
-    if width ~= nil then
-        self.W = math.max(100, tonumber(width) or self.W)
-        self.BaseW = self.W
-    end
-    if height ~= nil then self.H = math.max(48, tonumber(height) or (self.H or 48)) end
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetDynamic(value)
-    local enabled = value and true or false
-    self.Dynamic = enabled
-    self.DynamicWidth = enabled
-    self.DynamicHeight = enabled
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetDynamicWidth(value)
-    if type(value) == "string" and string.lower(value) == "expand" then
-        self.DynamicWidth = "expand"
-    else
-        self.DynamicWidth = value and true or false
-    end
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetDynamicHeight(value)
-    self.DynamicHeight = value and true or false
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetFont(font)
-    self.Font = Fonts.ResolveOverlay(font, self.Font)
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetHeaderFont(font)
-    self.HeaderFont = Fonts.ResolveOverlay(font, self.HeaderFont)
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:SetPosition(x, y)
-    if x ~= nil then self.X = tonumber(x) or self.X end
-    if y ~= nil then self.Y = tonumber(y) or self.Y end
-    return self
-end
-
-function HUDBox:Line(text, color, font)
-
-    if type(text) == "table" and not text.Text and not text.text then
-        local segments = {}
-        for _, part in ipairs(text) do
-            if type(part) == "table" then
-                segments[#segments + 1] = {
-                    Text = tostring(part.Text or part.text or part[1] or ""),
-                    Color = part.Color or part.color or part[2],
-                    Font = Fonts.ResolveOverlay(part.Font or part.font or part[3], nil),
-                    Size = tonumber(part.Size or part.size or part[4]),
-                }
-            else
-                segments[#segments + 1] = {
-                    Text = tostring(part),
-                    Color = color,
-                    Font = Fonts.ResolveOverlay(font, nil),
-                }
-            end
-        end
-        self.Lines[#self.Lines + 1] = {
-            Segments = segments,
-            Color = color,
-            Font = Fonts.ResolveOverlay(font, self.Font),
-        }
-    else
-        local tableFont = type(text) == "table" and (text.Font or text.font or text[3]) or nil
-        local tableSize = type(text) == "table" and (text.Size or text.size or text[4]) or nil
-        self.Lines[#self.Lines + 1] = {
-            Text = tostring((type(text) == "table" and (text.Text or text.text or text[1])) or text or ""),
-            Color = (type(text) == "table" and (text.Color or text.color or text[2])) or color,
-            Font = Fonts.ResolveOverlay(tableFont or font, self.Font),
-            Size = tonumber(tableSize),
-        }
-    end
-    self._layoutDirty = true
-    return self
-end
-
-function HUDBox:AddLine(text, color, font)
-    return self:Line(text, color, font)
-end
-
-function HUDBox:SetLines(lines)
-    self.Lines = {}
-    for _, line in ipairs(lines or {}) do
-        if type(line) == "table" and (line.Segments or line.segments) then
-            self:Line(line.Segments or line.segments,
-                      line.Color or line.color,
-                      line.Font or line.font)
-        elseif type(line) == "table" and (line.Text or line.text) then
-            self:Line(line)
-        elseif type(line) == "table" then
-            self:Line(line)
-        else
-            self:Line(line)
-        end
-    end
-    return self
-end
-
-function HUDBox:Clear()
-    self.Lines = {}
-    self._layoutDirty = true
-    return self
-end
-
-local function DrawHUDBoxes()
-    local th = State.Theme
-    local previousAlpha = FrameAlpha
-    FrameAlpha = 1
-
-    for _, box in ipairs(HUDBoxes) do
-        do
-            local revealAt = box._revealAt
-            if revealAt == nil then
-                revealAt = math.max(0, (box._revealOrder + 1) * 0.5)
-            end
-            local revealTarget = (box.Visible and (State.OverlayRevealTime or 0) >= revealAt) and 1 or 0
-            box._reveal = State.NoAnim and revealTarget
-                or Approach(box._reveal or 0, revealTarget, 14, State.Delta)
-            if math.abs((box._reveal or 0) - revealTarget) < 0.01 then box._reveal = revealTarget end
-
-            local boxAlpha = box._reveal or 0
-            FrameAlpha = boxAlpha
-
-            local headerH = 34
-            local padX = 8
-            local contentPadY = 4
-            local visibleCount = math.min(#box.Lines, box.MaxLines or 100)
-
-            if box._layoutDirty or box._layoutW == nil or box._layoutH == nil then
-                local widestLine = 0
-                local tallestLine = box.FontSize or 10
-                for i = 1, visibleCount do
-                    local line = box.Lines[i]
-                    local lineW = 0
-                    local lineTall = box.FontSize or 10
-                    if line.Segments then
-                        for _, segment in ipairs(line.Segments) do
-                            local font = segment.Font or line.Font or box.Font or Fonts.SystemBold
-                            local size = segment.Size or box.FontSize or 10
-                            lineW = lineW + TextWidth(tostring(segment.Text or ""), size, font)
-                            lineTall = math.max(lineTall, size)
-                        end
-                    else
-                        local font = line.Font or box.Font or Fonts.SystemBold
-                        local size = line.Size or box.FontSize or 10
-                        lineW = TextWidth(tostring(line.Text or ""), size, font)
-                        lineTall = math.max(lineTall, size)
-                    end
-                    widestLine = math.max(widestLine, lineW)
-                    tallestLine = math.max(tallestLine, lineTall)
-                end
-
-                local headerFont = box.HeaderFont or Fonts.SystemBold
-                local headerSize = box.HeaderSize or 12
-                local header = string.upper(tostring(box.Title or "OVERLAY"))
-                local headerW = TextWidth(header, headerSize, headerFont)
-                local maxChars = Clamp(box.MaxChars or 50, 8, 50)
-                local charCapW = TextWidth(string.rep("M", maxChars),
-                                           box.FontSize or 10,
-                                           box.Font or Fonts.SystemBold) + padX * 2
-                local naturalW = math.max(headerW + 20, widestLine + padX * 2)
-                local dynamicW = Clamp(naturalW, 100, math.max(100, charCapW))
-                local measuredW
-                if box.DynamicWidth == "expand" then
-                    measuredW = math.max(box.BaseW or box.W, dynamicW)
-                elseif box.DynamicWidth then
-                    measuredW = dynamicW
-                else
-                    measuredW = box.W
-                end
-                local lineH = math.max(box.MinLineHeight or 25, tallestLine + (box.LineSpacing or 12))
-                local naturalH = headerH + contentPadY + math.max(1, visibleCount) * lineH + contentPadY
-                local measuredH = box.DynamicHeight and naturalH
-                    or (box.H and math.max(headerH + contentPadY * 2, box.H) or naturalH)
-
-                box._layoutW = measuredW
-                box._layoutH = measuredH
-                box._lineH = lineH
-                box._layoutDirty = false
-                if box.DynamicWidth == true then box.W = measuredW end
-            end
-
-            local boxW = box._layoutW or box.W
-            local totalH = box._layoutH or (headerH + 8)
-            local lineH = box._lineH or math.max(box.MinLineHeight or 25, (box.FontSize or 10) + (box.LineSpacing or 12))
-            local headerFont = box.HeaderFont or Fonts.SystemBold
-            local headerSize = box.HeaderSize or 12
-            local header = string.upper(tostring(box.Title or "OVERLAY"))
-
-            local vp = Camera.ViewportSize
-            box.X = math.max(6, math.min(box.X, math.max(6, vp.X - boxW - 6)))
-            box.Y = math.max(6, math.min(box.Y, math.max(6, vp.Y - totalH - 6)))
-
-            if box._drag then
-                if Input.Down then
-                    box.X = Input.X - box._drag.gx
-                    box.Y = Input.Y - box._drag.gy
-                else
-                    box._drag = nil
-                end
-            end
-
-            local hover = MouseIn(box.X, box.Y, boxW, totalH)
-            box._hover = Approach(box._hover, hover and 1 or 0, 16, State.Delta)
-
-            if box.Visible and boxAlpha > 0.95
-               and hover and Input.Click and State.Open and State.Visible >= 0.50 then
-                box._drag = { gx = Input.X - box.X, gy = Input.Y - box.Y }
-                Input.Click = false
-            end
-
-            CutPanel(box.X, box.Y, boxW, totalH, 10, th.Panel, 351, 0.96)
-            CutOutline(box.X, box.Y, boxW, totalH, 10, th.Accent, 352, 0.88, 1)
-
-            local measuredHeaderW = TextWidth(header, headerSize, headerFont)
-            Text(header,
-                 box.X + (boxW - measuredHeaderW) / 2,
-                 TextMidY(box.Y, headerH, headerSize) - 2,
-                 th.Text, headerSize, headerFont, 354, 1,
-                 math.max(1, boxW - 20))
-
-            Line(box.X + 10, box.Y + headerH - 1,
-                 box.X + boxW - 10, box.Y + headerH - 1,
-                 th.Accent, 354, 1, 0.22)
-
-            for i = 1, visibleCount do
-                local line = box.Lines[i]
-                local rowY = box.Y + headerH + contentPadY + (i - 1) * lineH
-                if rowY + 8 <= box.Y + totalH - 5 then
-                    local tx = box.X + padX
-                    local maxRight = box.X + boxW - padX
-
-                    if line.Segments then
-                        for _, segment in ipairs(line.Segments) do
-                            if tx >= maxRight then break end
-                            local font = segment.Font or line.Font or box.Font or Fonts.SystemBold
-                            local size = segment.Size or box.FontSize or 10
-                            local room = maxRight - tx
-                            local segmentText = TrimText(tostring(segment.Text or ""), room, size, font)
-                            if segmentText ~= "" then
-                                Text(segmentText, tx,
-                                     TextMidY(rowY, lineH, size),
-                                     segment.Color or line.Color or th.Text,
-                                     size, font, 355, 0.96, room)
-                                tx = tx + TextWidth(segmentText, size, font)
-                            end
-                        end
-                    else
-                        local font = line.Font or box.Font or Fonts.SystemBold
-                        local size = line.Size or box.FontSize or 10
-                        Text(line.Text or "", tx,
-                             TextMidY(rowY, lineH, size),
-                             line.Color or th.Text,
-                             size, font, 355, 0.96,
-                             maxRight - tx)
-                    end
-                end
-            end
-            if not box.Visible then box._drag = nil end
-        end
-    end
-
-    FrameAlpha = previousAlpha
-end
-
-local function HUDBox_Remove(box)
-    for i, b in ipairs(HUDBoxes) do
-        if b == box then
-            table.remove(HUDBoxes, i)
-            return
-        end
-    end
-end
-
 local function TickVisibility(dt)
     local target = State.Open and 1 or 0
     if State.NoAnim then
@@ -5713,7 +5014,6 @@ local function Render()
     State.Delta = math.min(now - State.LastTick, 1 / 20)
     State.LastTick = now
     State.Frame = State.Frame + 1
-    TickPerformanceOverlay(State.Delta)
 
     UpdateCapture()
 
@@ -5737,9 +5037,6 @@ local function Render()
         State.Entrance.Time = math.min(State.Entrance.Duration, State.Entrance.Time + State.Delta)
         if State.Entrance.Time >= State.Entrance.Duration then State.Entrance.Active = false end
     end
-    if true then
-        State.OverlayRevealTime = (State.OverlayRevealTime or 0) + State.Delta
-    end
 
     if State.Visible < 0.005 then
         HidePicture(State.Logo)
@@ -5747,14 +5044,11 @@ local function Render()
 
         ResetPool()
 
-        TickNotifications(State.Delta)
-        DrawNotifications()
-        UpdateKeybindOverlayInput()
-        UpdatePerformanceOverlayInput()
-        DrawKeybindOverlay()
-        DrawPerformanceOverlay()
 
-        DrawHUDBoxes()
+
+
+
+
         State.ApplyInputState(false)
         HideUnused()
         return
@@ -5771,11 +5065,9 @@ local function Render()
     ResetPool()
     Tooltip.Hovered = false
 
-    UpdateKeybindOverlayInput()
-    UpdatePerformanceOverlayInput()
-    DrawKeybindOverlay()
-    DrawPerformanceOverlay()
-    DrawHUDBoxes()
+
+
+
 
     local entranceAlpha = 1
     if State.Entrance.Active then
@@ -5791,8 +5083,7 @@ local function Render()
 
     if not State.Entrance.Active then InputContent() end
 
-    TickNotifications(State.Delta)
-    DrawNotifications()
+
     DrawTooltip()
 
     DrawResizeHandle()
@@ -5881,269 +5172,6 @@ function State.TickKeybindCallbacks()
     end
 end
 
-local KeybindHUD = {
-    X = nil,
-    Y = 18,
-    Dragging = false,
-    DragOffsetX = 0,
-    DragOffsetY = 0,
-    Reveal = 0,
-}
-
-local function GetKeybindOverlayGeometry()
-    local vp = Camera.ViewportSize
-    local list = CollectKeybinds()
-    local maxRows = math.min(#list, 8)
-    local rowH = 27
-    local headerH = 34
-    local footerH = #list > 8 and 20 or 8
-
-    local labelSize = 11
-    local keySize = 12
-    local longestLabelW = TextWidth("No hotkeys assigned", labelSize, Fonts.SystemBold)
-    local longestKeyW = TextWidth("NONE", keySize, Fonts.SystemBold)
-    for i = 1, math.min(#list, 8) do
-        local entry = list[i]
-        local title = tostring(entry.Title or "Hotkey")
-        local value = string.upper(tostring(entry.Row and entry.Row.Value or "NONE"))
-        longestLabelW = math.max(longestLabelW, TextWidth(title, labelSize, Fonts.SystemBold))
-        longestKeyW = math.max(longestKeyW, TextWidth(value, keySize, Fonts.SystemBold))
-    end
-
-    local pillW = math.max(36, longestKeyW + 18)
-    local leftPad, gap, rightPad = 12, 14, 12
-    local w = math.max(142, leftPad + longestLabelW + gap + pillW + rightPad)
-    local h = headerH + math.max(1, maxRows) * rowH + footerH
-    local x = KeybindHUD.X
-    if x == nil then x = math.max(10, vp.X - w - 18) end
-    x = math.max(6, math.min(x, math.max(6, vp.X - w - 6)))
-    local y = math.max(6, math.min(KeybindHUD.Y, math.max(6, vp.Y - h - 6)))
-    return x, y, w, h, headerH, rowH, list, longestLabelW, pillW
-end
-
-UpdateKeybindOverlayInput = function()
-    if State.Settings and State.Settings.KeybindOverlay == false then return end
-    if (KeybindHUD.Reveal or 0) < 0.95 then return end
-    if not State.Open or State.Visible < 0.50 then
-        KeybindHUD.Dragging = false
-        return
-    end
-    local x, y, w, h = GetKeybindOverlayGeometry()
-    local hover = MouseIn(x, y, w, h)
-
-    if KeybindHUD.Dragging then
-        if Input.Down then
-            KeybindHUD.X = Input.X - KeybindHUD.DragOffsetX
-            KeybindHUD.Y = Input.Y - KeybindHUD.DragOffsetY
-        else
-            KeybindHUD.Dragging = false
-        end
-        Input.Click = false
-        return
-    end
-
-    if hover and Input.Click then
-        KeybindHUD.Dragging = true
-        KeybindHUD.DragOffsetX = Input.X - x
-        KeybindHUD.DragOffsetY = Input.Y - y
-        KeybindHUD.X = x
-        KeybindHUD.Y = y
-        Input.Click = false
-    end
-end
-
-DrawKeybindOverlay = function()
-    local target = (State.Settings and State.Settings.KeybindOverlay ~= false
-                    and (State.OverlayRevealTime or 0) >= 0) and 1 or 0
-    KeybindHUD.Reveal = State.NoAnim and target
-        or Approach(KeybindHUD.Reveal or 0, target, 14, State.Delta)
-    local th = State.Theme
-    local x, y, w, h, headerH, rowH, list, labelColumnW, pillW =
-        GetKeybindOverlayGeometry()
-
-    local previousAlpha = FrameAlpha
-    FrameAlpha = KeybindHUD.Reveal or 0
-
-    CutPanel(x, y, w, h, 10, th.Panel, 331, 0.96)
-    CutOutline(x, y, w, h, 10, th.Accent, 332, 0.88, 1)
-
-    local header = "HOTKEYS"
-    local headerSize = 12
-    local headerW = TextWidth(header, headerSize, Fonts.SystemBold)
-    Text(header, x + (w - headerW) / 2,
-         TextMidY(y, headerH, headerSize) - 2,
-         th.Text, headerSize, Fonts.SystemBold, 334, 1, headerW + 2)
-
-    Line(x + 10, y + headerH - 1, x + w - 10, y + headerH - 1,
-         th.Accent, 334, 1, 0.22)
-
-    local rowY = y + headerH
-    if #list == 0 then
-        local empty = "No hotkeys assigned"
-        local emptyW = TextWidth(empty, 11, Fonts.SystemBold)
-        Text(empty, x + (w - emptyW) / 2,
-             TextMidY(rowY, rowH, 11),
-             th.TextDim, 11, Fonts.SystemBold, 335, 0.82, emptyW + 2)
-        FrameAlpha = previousAlpha
-        return
-    end
-
-    local labelX = x + 12
-    local pillX = labelX + labelColumnW + 14
-    for i = 1, math.min(#list, 8) do
-        local entry = list[i]
-        local title = tostring(entry.Title or "Hotkey")
-        local value = string.upper(tostring(entry.Row and entry.Row.Value or "NONE"))
-        local labelSize = 11
-        local keySize = 12
-        local valueW = TextWidth(value, keySize, Fonts.SystemBold)
-        local pillH = 20
-        local pillY = rowY + (rowH - pillH) / 2
-
-        Text(title, labelX, TextMidY(rowY, rowH, labelSize),
-             th.Text, labelSize, Fonts.SystemBold, 336, 0.96, labelColumnW + 2)
-
-        Rect(pillX, pillY, pillW, pillH, th.Accent, 337, 5, 0.13)
-        Stroke(pillX, pillY, pillW, pillH, th.Accent, 338, 5, 0.42)
-        Text(value,
-             pillX + (pillW - valueW) / 2,
-             TextMidY(pillY, pillH, keySize),
-             th.Accent, keySize, Fonts.SystemBold, 339, 1, valueW + 2)
-
-        rowY = rowY + rowH
-    end
-
-    if #list > 8 then
-        local more = "+" .. tostring(#list - 8) .. " more"
-        local moreW = TextWidth(more, 8, Fonts.SystemBold)
-        Text(more, x + (w - moreW) / 2, rowY + 4,
-             th.TextDim, 8, Fonts.SystemBold, 339, 0.68, moreW + 2)
-    end
-
-    FrameAlpha = previousAlpha
-end
-
-local PerformanceHUD = {
-    X = 18,
-    Y = 18,
-    Dragging = false,
-    DragOffsetX = 0,
-    DragOffsetY = 0,
-    FPS = 60,
-    FrameMS = 16.7,
-    AccumTime = 0,
-    AccumFrames = 0,
-    Reveal = 0,
-}
-
-TickPerformanceOverlay = function(dt)
-    dt = math.max(0.0001, tonumber(dt) or (1 / 60))
-    PerformanceHUD.AccumTime = PerformanceHUD.AccumTime + dt
-    PerformanceHUD.AccumFrames = PerformanceHUD.AccumFrames + 1
-    if PerformanceHUD.AccumTime >= 0.35 then
-        PerformanceHUD.FPS = PerformanceHUD.AccumFrames / PerformanceHUD.AccumTime
-        PerformanceHUD.FrameMS = (PerformanceHUD.AccumTime / PerformanceHUD.AccumFrames) * 1000
-        PerformanceHUD.AccumTime = 0
-        PerformanceHUD.AccumFrames = 0
-    end
-end
-
-local function GetPerformanceRows()
-    local vp = Camera.ViewportSize
-    return {
-        {"FPS", tostring(math.floor(PerformanceHUD.FPS + 0.5))},
-        {"FRAME", string.format("%.1f ms", PerformanceHUD.FrameMS)},
-        {"WINDOW", tostring(math.floor(State.W)) .. " x " .. tostring(math.floor(State.H))},
-        {"VIEWPORT", tostring(math.floor(vp.X)) .. " x " .. tostring(math.floor(vp.Y))},
-    }
-end
-
-local function GetPerformanceOverlayGeometry()
-    local vp = Camera.ViewportSize
-    local rows = GetPerformanceRows()
-    local labelSize, valueSize = 10, 10
-    local labelW, valueW = 0, 0
-    for _, row in ipairs(rows) do
-        labelW = math.max(labelW, TextWidth(row[1], labelSize, Fonts.SystemBold))
-        valueW = math.max(valueW, TextWidth(row[2], valueSize, Fonts.SystemBold))
-    end
-    local headerH, rowH = 34, 25
-    local w = math.max(158, 12 + labelW + 18 + valueW + 12)
-    local h = headerH + #rows * rowH + 8
-    local x = math.max(6, math.min(PerformanceHUD.X, math.max(6, vp.X - w - 6)))
-    local y = math.max(6, math.min(PerformanceHUD.Y, math.max(6, vp.Y - h - 6)))
-    return x, y, w, h, headerH, rowH, rows, labelW, valueW
-end
-
-UpdatePerformanceOverlayInput = function()
-    if State.Settings and State.Settings.PerformanceOverlay == false then return end
-    if (PerformanceHUD.Reveal or 0) < 0.95 then return end
-    if not State.Open or State.Visible < 0.50 then
-        PerformanceHUD.Dragging = false
-        return
-    end
-    local x, y, w, h = GetPerformanceOverlayGeometry()
-    local hover = MouseIn(x, y, w, h)
-
-    if PerformanceHUD.Dragging then
-        if Input.Down then
-            PerformanceHUD.X = Input.X - PerformanceHUD.DragOffsetX
-            PerformanceHUD.Y = Input.Y - PerformanceHUD.DragOffsetY
-        else
-            PerformanceHUD.Dragging = false
-        end
-        Input.Click = false
-        return
-    end
-
-    if hover and Input.Click then
-        PerformanceHUD.Dragging = true
-        PerformanceHUD.DragOffsetX = Input.X - x
-        PerformanceHUD.DragOffsetY = Input.Y - y
-        PerformanceHUD.X = x
-        PerformanceHUD.Y = y
-        Input.Click = false
-    end
-end
-
-DrawPerformanceOverlay = function()
-    local target = (State.Settings and State.Settings.PerformanceOverlay ~= false
-                    and (State.OverlayRevealTime or 0) >= 0.5) and 1 or 0
-    PerformanceHUD.Reveal = State.NoAnim and target
-        or Approach(PerformanceHUD.Reveal or 0, target, 14, State.Delta)
-    local th = State.Theme
-    local x, y, w, h, headerH, rowH, rows, labelW =
-        GetPerformanceOverlayGeometry()
-
-    local previousAlpha = FrameAlpha
-    FrameAlpha = PerformanceHUD.Reveal or 0
-
-    CutPanel(x, y, w, h, 10, th.Panel, 341, 0.96)
-    CutOutline(x, y, w, h, 10, th.Accent, 342, 0.88, 1)
-
-    local header = "PERFORMANCE"
-    local headerSize = 12
-    local headerW = TextWidth(header, headerSize, Fonts.SystemBold)
-    Text(header, x + (w - headerW) / 2,
-         TextMidY(y, headerH, headerSize) - 2,
-         th.Text, headerSize, Fonts.SystemBold, 344, 1, headerW + 2)
-
-    Line(x + 10, y + headerH - 1, x + w - 10, y + headerH - 1,
-         th.Accent, 344, 1, 0.22)
-
-    local rowY = y + headerH
-    local valueX = x + 12 + labelW + 18
-    for _, row in ipairs(rows) do
-        Text(row[1], x + 12, TextMidY(rowY, rowH, 10),
-             th.TextDim, 10, Fonts.SystemBold, 345, 0.86, labelW + 2)
-        Text(row[2], valueX, TextMidY(rowY, rowH, 10),
-             th.Text, 10, Fonts.SystemBold, 346, 0.98, w - (valueX - x) - 12)
-        rowY = rowY + rowH
-    end
-
-    FrameAlpha = previousAlpha
-end
-
 local function EnsureGlobalSettingsTab(library)
     for _, tab in ipairs(State.Tabs) do
         if tab.IsSettings then return tab end
@@ -6169,31 +5197,6 @@ local function EnsureGlobalSettingsTab(library)
             end
         end,
     })
-    Controls.Toggle(behavior, {
-        Title = "Performance overlay",
-        Description = "Show the performance statistics overlay.",
-        Default = State.Settings.PerformanceOverlay ~= false,
-        ConfigKey = "settings.performanceOverlay",
-        Callback = function(enabled)
-            State.Settings.PerformanceOverlay = enabled
-        end,
-    })
-    Controls.Toggle(behavior, {
-        Title = "Hotkey overlay",
-        Description = "Show the active hotkeys overlay.",
-        Default = State.Settings.KeybindOverlay ~= false,
-        ConfigKey = "settings.keybindOverlay",
-        Callback = function(enabled)
-            State.Settings.KeybindOverlay = enabled
-        end,
-    })
-    Controls.Button(behavior, {
-        Title = "Reset overlay position",
-        Callback = function()
-            KeybindHUD.X = nil
-            KeybindHUD.Y = 18
-        end,
-    })
     Controls.Button(behavior, {
         Title = "Reset window position",
         Callback = function()
@@ -6206,8 +5209,8 @@ local function EnsureGlobalSettingsTab(library)
     local appearance = Section.new(tab, "Appearance", "Global interface appearance", {})
     Controls.Dropdown(appearance, {
         Title = "Theme",
-        Options = {"Lavender Glass", "Cloud Glass", "Rose Glass", "Mint Glass", "Midnight", "Obsidian", "Burgundy", "Cyber", "Bubblegum", "Emerald", "Crimson", "Arctic", "Sunset", "Royal"},
-        Default = (State.Theme and State.Theme.Name) or "Midnight",
+        Options = {"Blue", "Red", "Pink", "Purple", "Green", "Cyan", "Orange", "Yellow", "White"},
+        Default = (State.Theme and State.Theme.Name) or "Blue",
         Callback = function(value) SetThemeByName(value) end,
     })
     Controls.Toggle(appearance, {
@@ -6501,10 +5504,6 @@ function Library:CreateWindow(opts)
 
     if opts.MenuKey or opts.menuKey then State.MenuKey = string.lower(tostring(opts.MenuKey or opts.menuKey)) end
 
-    local notifPos = opts.NotifPos or opts.notifpos or opts.NotificationPosition or opts.notificationPosition
-    if notifPos ~= nil then
-        State.NotificationPosition = NormalizeNotificationPosition(notifPos)
-    end
     if opts.NoAnim ~= nil or opts.noAnim ~= nil then State.NoAnim = (opts.NoAnim ~= nil and opts.NoAnim or opts.noAnim) and true or false end
     if opts.Background ~= nil or opts.background ~= nil then State.Background = NormalizeBackground(opts.Background or opts.background) end
     local themeOption = opts.Theme or opts.theme
@@ -6622,7 +5621,7 @@ function Library:SaveConfig(name)
 
     local data = {
         version = 1,
-        theme = State.Theme and State.Theme.Name or "Midnight",
+        theme = State.Theme and State.Theme.Name or "Blue",
         background = type(State.Background) == "table" and (State.Background.Type or "none") or State.Background,
         settings = {
             WindowOpacity = State.Settings.WindowOpacity,
@@ -6783,10 +5782,6 @@ function Library:DeleteConfig(name)
     return ok, ok and path or err
 end
 
-function Library:Notify(opts)
-    return Notify(opts)
-end
-
 function Library:SetTheme(name)
     return SetThemeByName(name)
 end
@@ -6797,22 +5792,6 @@ end
 
 function Library:SetBackground(effect)
     State.Background = NormalizeBackground(effect)
-end
-
-function Library:OpenKeybinds()
-    State.Settings.KeybindOverlay = true
-end
-
-function Library:CloseKeybinds()
-    State.Settings.KeybindOverlay = false
-end
-
-function Library:OpenPerformance()
-    State.Settings.PerformanceOverlay = true
-end
-
-function Library:ClosePerformance()
-    State.Settings.PerformanceOverlay = false
 end
 
 function Library:SetKeybind(key)
@@ -6850,14 +5829,6 @@ function Library:Destroy()
     if type(setrobloxinput) == "function" then setrobloxinput(true) end
     ClearPool()
     CancelCapture()
-end
-
-function Library:CreateOverlay(opts)
-    return HUDBox.new(opts)
-end
-
-function Library:CreateBox(opts)
-    return HUDBox.new(opts)
 end
 
 Library.IsBindHeld    = IsBindHeld
@@ -6976,7 +5947,7 @@ else
     end)
 end
 
-Library.Version = "2.1.0"
+Library.Version = "2.2.0"
 
 GlassyUI = Library
 
