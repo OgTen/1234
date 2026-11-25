@@ -1,4 +1,6 @@
-local GlassyUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/OgTen/1234/refs/heads/main/glassy-ui.lua"))()
+local Source = game:HttpGet("https://raw.githubusercontent.com/OgTen/1234/refs/heads/main/glassy-ui.lua")
+assert(loadstring(Source))()
+local GlassyUI = assert(_G.GlassyUI, "GlassyUI failed to load")
 
 local Window = GlassyUI:CreateWindow({
     Title = "Matcha Script",
@@ -6,8 +8,9 @@ local Window = GlassyUI:CreateWindow({
     Size = Vector2.new(760, 540),
     Theme = "Lavender Glass",
     MenuKey = "p",
-    Opacity = 88,
-    Background = "aurora",
+    Opacity = 100,
+    Background = "none",
+    -- Logo = "YOUR_NEXA_LOGO_URL",
 })
 
 local Main = Window:AddTab({ Title = "Main", Icon = "home", Select = true })
