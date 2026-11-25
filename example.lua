@@ -1,4 +1,4 @@
-local GlassyUI = loadstring(game:HttpGet("YOUR_RAW_GITHUB_URL/glassy-ui.lua"))()
+local GlassyUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/OgTen/1234/refs/heads/main/glassy-ui.lua"))()
 
 local Window = GlassyUI:CreateWindow({
     Title = "Matcha Script",
